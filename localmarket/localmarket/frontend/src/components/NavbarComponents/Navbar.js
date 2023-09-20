@@ -28,7 +28,7 @@ const Navbar = () => {
               Local Market
             </Link>
           </Typography>
-          <Hidden xsDown >
+          <Hidden mdDown >
           <Stack direction='row' spacing={{ xs: 1, sm: 2, md: 4 }}>
             <Button color="inherit" component={Link} to="/orders">
               Orders

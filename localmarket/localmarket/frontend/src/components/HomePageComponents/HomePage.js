@@ -24,13 +24,13 @@ const HomePage = () => {
         sx={{ minHeight: 'calc(100vh - 200px)' }}
       >
         <Routes>
-          <Route path="/" element={<HomePageContent />} />
-          <Route path="/orders" element={<OrdersPage />} />
-          <Route path="/delivery" element={<Delivery />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/login" element={<LoginCard />} />
-          <Route path="/register" element={<RegisterCard />} />
+          <Route path="" element={<HomePageContent />} />
+          <Route path="orders" element={<OrdersPage />} />
+          <Route path="delivery" element={<Delivery />} />
+          <Route path="cart" element={<Cart />} />
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="login" element={<LoginCard />} />
+          <Route path="register" element={<RegisterCard />} />
         </Routes>
       </Box>
       <Footer />
