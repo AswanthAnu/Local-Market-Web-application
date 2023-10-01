@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser
+from .models import CustomUser, Product, ProductVariant, ProductPricing, Category
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,3 +16,26 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+    
+class ProductPricingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductPricing
+        fields = "__all__"
+
+class ProductVariantSerializer(serializers.ModelSerializer):
+    pricing = ProductPricingSerializer(source='productpricing')  
+
+    class Meta:
+        model = ProductVariant
+        fields = "__all__"
+        
+
+class ProductSerializer(serializers.ModelSerializer):
+    variants = ProductVariantSerializer(many=True, source='productvariant_set') 
+    category = serializers.CharField(source='category.category_name')  
+
+
+    class Meta:
+        model = Product
+        fields = "__all__"
+

@@ -1,13 +1,14 @@
-from rest_framework import status
+from rest_framework import status, generics, filters
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from .serializers import UserSerializer
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.permissions import IsAuthenticated
-
-from .models import CustomUser
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.pagination import PageNumberPagination
+from .serializers import UserSerializer, ProductSerializer
+from .models import CustomUser, Product, ProductPricing, ProductVariant,Category
 
 @api_view(['POST'])
 def register_user(request):
@@ -50,3 +51,29 @@ def user_logout(request):
             return Response({'message': 'Successfully logged out.'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class CustomPagination(PageNumberPagination):
+    page_size = 12 
+
+class ProductListView(generics.ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    pagination_class = CustomPagination
+    permission_classes = [IsAuthenticatedOrReadOnly] 
+
+class ProductSearchView(generics.ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['product_name', 'category__category_name']
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+class ProductCategoryView(generics.ListAPIView):
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly] 
+
+    def get_queryset(self):
+        category_name = self.kwargs['category_name']
+        category = get_object_or_404(Category, category_name=category_name)
+        return Product.objects.filter(category=category)
+    

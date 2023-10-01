@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {Container, 
         Grid, 
         Card, 
@@ -9,159 +9,61 @@ import {Container,
         Button, 
         Box, 
         MenuItem, 
-        Select
-      } from '@mui/material';
+        Select,
+        Stack,
+        IconButton
+} from '@mui/material';
+import RemoveShoppingCartIcon from '@mui/icons-material/RemoveShoppingCart';
 import SearchField from '../SearchFieldComponents/SearchField';
+import CategoryChip from './CategoryChip';
 
-const ProductData = [
-  {
-    product_name : "Capsicum",
-    Product_variant : {
-      '500 g' : { 
-        og_price : 100,
-        discount : 20,
-        ds_price : 80,
-      },
-      '1 kg' : { 
-        og_price : 200,
-        discount : 20,
-        ds_price : 160,
-      },
-      '2 kg' : { 
-        og_price : 400,
-        discount : 20,
-        ds_price : 320,
-      },
 
-    }, 
-    image : 'static/images/cards/capsicum.jpg' 
-
-  },
-  {
-    product_name : "Capsicum",
-    Product_variant : {
-      '500 g' : { 
-        og_price : 100,
-        discount : 20,
-        ds_price : 80,
-      },
-      '1 kg' : { 
-        og_price : 200,
-        discount : 20,
-        ds_price : 160,
-      },
-      '2 kg' : { 
-        og_price : 400,
-        discount : 20,
-        ds_price : 320,
-      },
-
-    },
-    image : 'static/images/cards/capsicum.jpg' 
-
-  },
-  {
-    product_name : "Capsicum",
-    Product_variant : {
-      '500 g' : { 
-        og_price : 100,
-        discount : 20,
-        ds_price : 80,
-      },
-      '1 kg' : { 
-        og_price : 200,
-        discount : 20,
-        ds_price : 160,
-      },
-      '2 kg' : { 
-        og_price : 400,
-        discount : 20,
-        ds_price : 320,
-      },
-
-    },
-    image : 'static/images/cards/capsicum.jpg'  
-
-  },
-  {
-    product_name : "Capsicum",
-    Product_variant : {
-      '500 g' : { 
-        og_price : 100,
-        discount : 20,
-        ds_price : 80,
-      },
-      '1 kg' : { 
-        og_price : 200,
-        discount : 20,
-        ds_price : 160,
-      },
-      '2 kg' : { 
-        og_price : 400,
-        discount : 20,
-        ds_price : 320,
-      },
-
-    },
-    image : 'static/images/cards/capsicum.jpg'  
-
-  },
-  {
-    product_name : "Capsicum",
-    Product_variant : {
-      '500 g' : { 
-        og_price : 100,
-        discount : 20,
-        ds_price : 80,
-      },
-      '1 kg' : { 
-        og_price : 200,
-        discount : 20,
-        ds_price : 160,
-      },
-      '2 kg' : { 
-        og_price : 400,
-        discount : 20,
-        ds_price : 320,
-      },
-
-    },
-    image : 'static/images/cards/capsicum.jpg' 
-
-  },
-  {
-    product_name : "Capsicum",
-    Product_variant : {
-      '400 g' : { 
-        og_price : 100,
-        discount : 20,
-        ds_price : 80,
-      },
-      '1 kg' : { 
-        og_price : 200,
-        discount : 20,
-        ds_price : 160,
-      },
-      '2 kg' : { 
-        og_price : 400,
-        discount : 20,
-        ds_price : 320,
-      },
-
-    },
-    image : 'static/images/cards/capsicum.jpg' 
-
-  }
-]
 
 const HomePageContent = () => {
 
-  const [orginalPrice, setOrginalPrice] = useState('k')
-  const key = Object.keys(ProductData[0].Product_variant)[0]
-  const value = ProductData[0].Product_variant[key].og_price
-  console.log(value)
+  const [products, setProducts] = useState([])
+  const [selectedVariants, setSelectedVariants] = useState([])
+  const [uniqueCategories, setUniqueCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [selectedVariants, setSelectedVariants] = useState(ProductData.map(() => null));
+  useEffect(() => {
+    const apiUrl = '/api/products/'
+
+    fetch(apiUrl).then((response) => response.json()).then((data) => {
+      setProducts(data.results)
+      const initialVariants = data.results.map((product) => product.variants[0]?.id || '');
+        setSelectedVariants(initialVariants);
+        console.log('initial variant', initialVariants)
+
+      const allCategories = data.results.flatMap((product) =>
+        product.category
+        );
+        console.log("categories",allCategories)
+        const uniqueCategories = [...new Set(allCategories)];
+        setUniqueCategories(uniqueCategories);
+        
+        setLoading(false);
+    })
+    .catch((error) => {
+      console.error('Error fetching data: ', error)
+    })
+  }, [])
+
+
+
+
+  const handleSearch = (searchResults) => {
+    
+    console.log(searchResults, 'searchresult')
+    setLoading(true)
+    const initialSearchVariants = searchResults.map((product) => product.variants[0]?.id || '');
+    console.log("intialsearchvariant", initialSearchVariants)
+    setSelectedVariants(prev => [...initialSearchVariants]);
+    setProducts(prev => [...searchResults]);
+    setLoading(false);
+   
+    
+  };
 
   const handleVariantChange = (event, productIndex) => {
     const variantKey = event.target.value;
@@ -170,100 +72,141 @@ const HomePageContent = () => {
     setSelectedVariants(updatedVariants);
   };
 
+
+  
+    console.log('product',products),
+    console.log("selectvariants", selectedVariants)
+    console.log('---------------------------------------------------------------------')
+
+
   return (
+    !loading && (
+      <Container maxWidth="lg" style={{ marginTop: '30px', marginBottom: '30px'}}>
+        <Stack>
+          <CategoryChip 
+            items={uniqueCategories}
+            onSearch={handleSearch}
+          />
+          <SearchField onSearch={handleSearch}/>
+        </Stack>
+        <div>
+          {products.length === 0 ? ( 
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
+              <IconButton>
+                <RemoveShoppingCartIcon /> 
+              </IconButton>
+              <Typography variant="h6">Sorry, there is no such item. Try another one.</Typography>
+            </div>
+          ) : (
+            <Grid container spacing={2}>
+              {products.map((product, index) => (
+                <Grid item 
+                      xs={6} 
+                      sm={4} 
+                      md={3} 
+                      lg={3} 
+                      key={index}>
+                  <Card style={{ height: '100%',}}>
+                      <Box sx={{ 
+                                  m: 1, 
+                                  border: 1, 
+                                  borderColor: 'grey.200', 
+                                  borderRadius: '16px', 
+                                  position: 'relative' }}>
+                          {console.log(selectedVariants) }
+                        {selectedVariants[index] &&
+                        product.variants.find((variant) => variant.id === selectedVariants[index]).pricing.discount > 0 && (           
+                          <Typography
+                            variant="body2"
+                            component="div"
+                            style={{
+                              position: 'absolute',
+                              top: '0',
+                              left: '0',
+                              background: 'rgba(0, 128, 0, 0.7)',
+                              color: 'white',
+                              padding: '4px 8px',
+                              borderTopLeftRadius: '16px',
+                            }}
+                          >
+                            {selectedVariants[index] &&
+                            product.variants.find((variant) => variant.id === selectedVariants[index]).pricing.discount}% off
+                          </Typography>
+                        )}
+                        <CardMedia
+                          component="img"
+                          height="190"
+                          style={{ objectFit: 'cover' }}
+                          image={product.image}
+                        />
+                      </Box>
+                      <CardContent>
+                        <Typography gutterBottom variant="h6" component="div">
+                          {product.product_name}
+                        </Typography>
+                        <Select
+                          value={selectedVariants[index] || ''}
+                          onChange={(event) => handleVariantChange(event, index)}
+                          style={{ margin: 5, width: '100%' }}
+                        >
+                          {product.variants.map((variant, variantIndex) => (
+                            <MenuItem key={variantIndex} value={variant.id}>
+                              {`${Math.round(variant.weight)} ${variant.weight_unit}`}
+                              {variant.pricing.discount > 0 && (
+                                <span
+                                  style={{
+                                    marginLeft: '8px',
+                                    padding: '2px 6px',
+                                    backgroundColor: 'rgba(0, 128, 0, 0.7)',
+                                    color: 'white',
+                                    borderRadius: '4px',
+                                    fontSize: '12px',
+                                  }}
+                                >
+                                  {`${variant.pricing.discount}% off`}
+                                </span>
+                              )}
+                            </MenuItem>
+                          ))}
+                        </Select>
 
-    <Container maxWidth="lg" style={{ marginTop: '30px', marginBottom: '30px'}}>
-      <SearchField />
-      <div >
-        <Grid container spacing={2}>
-          {ProductData.map((product, index) => (
-            <Grid item 
-                  xs={6} 
-                  sm={4} 
-                  md={3} 
-                  lg={3} 
-                  key={index}>
-              <Card style={{ height: '100%',}}>
-                <Box sx={{ 
-                            m: 1, 
-                            border: 1, 
-                            borderColor: 'grey.200', 
-                            borderRadius: '16px', 
-                            position: 'relative' }}>
-                  <Typography
-                    variant="body2"
-                    component="div"
-                    style={{
-                      position: 'absolute',
-                      top: '0',
-                      left: '0',
-                      background: 'rgba(0, 128, 0, 0.7)',
-                      color: 'white',
-                      padding: '4px 8px',
-                      borderTopLeftRadius: '16px',
-                    }}
-                  >
-                    {product.Product_variant[selectedVariants[index] || Object.keys(product.Product_variant)[0]].discount}%
-                  </Typography>
-                  <CardMedia
-                    component="img"
-                    height="190"
-                    style={{ objectFit: 'cover' }}
-                    image={product.image}
-                  />
-                </Box>
-                <CardContent>
-                  <Typography gutterBottom variant="h5" component="div">
-                    {product.product_name}
-                  </Typography>
-                  <Select
-                    value={selectedVariants[index] || Object.keys(product.Product_variant)[0]}
-                    onChange={(event) => handleVariantChange(event, index)}
-                    style={{ margin: 5, width: '100%' }}
-                  >
-                    {Object.keys(product.Product_variant).map((variantKey, variantIndex) => (
-                      <MenuItem key={variantIndex} value={variantKey}>
-                        {variantKey}
-                      </MenuItem>
-                    ))}
-                  </Select>
-
-                  <Typography variant="body2" 
-                              color="textSecondary" 
-                              style={{ display: 'flex', 
-                              alignItems: 'center' }}
-                  >
-                    Original Price: <span style={{ 
-                                                  color: 'grey', 
-                                                  textDecoration: 'line-through', 
-                                                  marginRight: '5px' 
-                                                  }}
-                                      >
-                                        &#8377;
-                                      </span>
-                    {product.Product_variant[selectedVariants[index] || Object.keys(product.Product_variant)[0]].og_price}
-                  </Typography>
-                  <Typography variant="body2" color="textPrimary">
-                    Discount Price: <span style={{ color: 'black', marginRight: '5px' }}>&#8377;</span>
-                    <strong>
-                      {product.Product_variant[selectedVariants[index] || Object.keys(product.Product_variant)[0]].ds_price}
-                    </strong>
-                  </Typography>
+                        {selectedVariants[index] && product.variants.find((variant) => variant.id === selectedVariants[index]) && (
+                          <>
+                            <Typography variant="body2" color="textSecondary">
+                              Original Price: &#8377;{product.variants.find((variant) => variant.id === selectedVariants[index]).pricing.original_price}
+                            </Typography>
+                            <Typography variant="body2" color="textPrimary">
+                              Discount Price: &#8377;{product.variants.find((variant) => variant.id === selectedVariants[index]).pricing.discount_price}
+                            </Typography>
+                          </>
+                        )}
 
 
 
-                </CardContent>
-                <CardActions>
-                  <Button variant="contained" color="primary" size="small" fullWidth>
-                    Add to Cart
-                  </Button>
-                </CardActions>
-              </Card>
+                      </CardContent>
+                      <CardActions>
+                        {selectedVariants[index] && product.variants.find((variant) => variant.id === selectedVariants[index]).stock_quantity ? (
+                          <Button variant="contained" color="primary" size="small" fullWidth 
+                          >
+                            Add to Cart
+                          </Button>
+                        ) : (
+                          <Button variant="contained" color="error" size="small" fullWidth
+                          disabled
+                          >
+                            Out of Stock
+                          </Button>
+                        )}
+                      </CardActions>
+                    </Card>
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
-      </div>
-  </Container>
+          )}
+        </div>
+      </Container>
+      
+    )
   )
   
 }
