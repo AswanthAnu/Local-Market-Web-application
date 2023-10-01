@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { Chip, IconButton } from '@mui/material';
+import { Chip, IconButton, useMediaQuery, ThemeProvider } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { createTheme } from '@mui/material/styles'; 
 
 const CategoryChip = ({ items, onSearch }) => {
   const [startIndex, setStartIndex] = useState(0);
-  const visibleItems = 4;
+
+  const theme = createTheme();
+
+  const isXs = useMediaQuery(theme.breakpoints.down('xs'));
+  const isMd = useMediaQuery(theme.breakpoints.down('md'));
+
+  const visibleItems = isXs ? 2 : (isMd ? 2 : 4);
 
   const handleScroll = (scrollOffset) => {
     const newStartIndex = Math.min(
