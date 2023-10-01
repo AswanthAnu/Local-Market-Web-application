@@ -1,11 +1,11 @@
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+
 
 class CustomUser(AbstractUser):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
-
-    # Add any other custom fields you need
 
     def __str__(self):
         return self.username
@@ -13,16 +13,142 @@ class CustomUser(AbstractUser):
         Group,
         verbose_name='groups',
         blank=True,
-        related_name='custom_user_set',  # Use a different name
+        related_name='custom_user_set',  
     )
     user_permissions = models.ManyToManyField(
         Permission,
         verbose_name='user permissions',
         blank=True,
-        related_name='custom_user_set',  # Use a different name
+        related_name='custom_user_set',  
     )
 
 
+class Customer(models.Model):
+    custom_user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    phone_number = models.CharField(max_length=15)  
+    created_date = models.DateField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return self.first_name
+
+class CustomerAddress(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    address_line1 = models.CharField(max_length=255)
+    address_line2 = models.CharField(max_length=255, blank=True, null=True) 
+    street_name = models.CharField(max_length=100)
+    city = models.CharField(max_length=100)
+    pincode = models.CharField(max_length=10) 
+
+    class Meta:
+        verbose_name_plural = "CustomerAddress"
+
+    def __str__(self) -> str:
+        return self.address_line1
+
+
+class Category(models.Model):
+    category_name = models.CharField(max_length=255, unique=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    edited_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Categories"
+
+    def __str__(self) -> str:
+        return self.category_name
+
+
+class Product(models.Model):
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    product_name = models.CharField(max_length=255)
+    image = models.ImageField(upload_to='product_images/')
+    created_date = models.DateTimeField(auto_now_add=True)
+    edited_date = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.product_name
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    weight = models.DecimalField(max_digits=5, decimal_places=2)
+    weight_unit = models.CharField(max_length=20, choices=[('g', 'g'), ('kg', 'kg')])
+    stock_quantity = models.PositiveIntegerField()
+    created_date = models.DateTimeField(auto_now_add=True)
+    edited_date = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{self.product.product_name} {str(self.weight)} {self.weight_unit}"
+
+class ProductPricing(models.Model):
+    variant = models.OneToOneField(ProductVariant, on_delete=models.CASCADE)
+    original_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount = models.PositiveIntegerField(validators=[MinValueValidator(0), MaxValueValidator(90)])
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2)
+    created_date = models.DateTimeField(auto_now_add=True)
+    edited_date = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        self.discount_price = self.original_price - (self.original_price * self.discount / 100)
+        super(ProductPricing, self).save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.variant.product.product_name} {str(self.variant.weight)} {self.variant.weight_unit} {(self.original_price)}"
+
+class Order(models.Model):
+    customer = models.ForeignKey( Customer, on_delete=models.CASCADE)
+    order_date = models.DateTimeField(auto_now_add=True)  
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_discount = models.PositiveIntegerField(validators=[MinValueValidator(0), MaxValueValidator(95)])
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self) -> str:
+        return self.customer.first_name
+
+class OrderDetails(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount = models.PositiveIntegerField(validators=[MinValueValidator(0), MaxValueValidator(95)])
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        verbose_name_plural = "OrderDetails"
+
+    def __str__(self) -> str:
+        return self.total_price
+
+
+class Delivery(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    delivery_status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('delivered', 'Delivered')])
+    delivery_date = models.DateTimeField()
+
+    class Meta:
+        verbose_name_plural = "Deliveries"
+
+    def __str__(self) -> str:
+        return self.delivery_status
+
+
+class Cart(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    creation_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=[('active', 'Active'), ('completed', 'Completed')])
+
+    def __str__(self) -> str:
+        return self.status
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+
+    def __str__(self) -> str:
+        return self.quantity
 
 
 
