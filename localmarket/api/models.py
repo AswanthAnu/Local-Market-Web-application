@@ -135,12 +135,12 @@ class Delivery(models.Model):
 
 
 class Cart(models.Model):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    staff_user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     creation_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=[('active', 'Active'), ('completed', 'Completed')])
 
     def __str__(self) -> str:
-        return self.status
+        return str(self.id) + ":- " +  str(self.staff_user)
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
@@ -148,7 +148,7 @@ class CartItem(models.Model):
     quantity = models.PositiveIntegerField()
 
     def __str__(self) -> str:
-        return self.quantity
+        return str(self.variant) + str(self.quantity) + " " + str(self.cart)
 
 
 

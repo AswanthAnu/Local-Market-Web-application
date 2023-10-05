@@ -12,7 +12,7 @@ import CardProductName from './CardProductName';
 import CartPrice from './CartPrice';
 import CartItemRemove from './CartItemRemove';
 
-const Cards = ({ cartitem, index }) => {
+const Cards = ({ cartitem, index, updateCartItemQuantity  }) => {
   return (
     <Card key={index} sx={{ margin: '10px' }}>
       <Stack
@@ -64,7 +64,10 @@ const Cards = ({ cartitem, index }) => {
             },
           }}
         >
-          <CartPrice cartitem={cartitem} />
+          <CartPrice 
+            cartitem={cartitem} 
+            updateCartItemQuantity={updateCartItemQuantity} 
+          />
         </Stack>
         <Stack
           flex={1}

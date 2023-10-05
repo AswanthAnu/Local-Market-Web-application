@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
     Stack, 
     Typography, 
@@ -8,32 +8,103 @@ import {
 } from '@mui/material'
 import RemoveIcon from '@mui/icons-material/Remove';
 import AddIcon from '@mui/icons-material/Add';
+import StockDialog from './StockDialog'
 
-const CartPrice = ({cartitem}) => {
+const CartPrice = ({cartitem, updateCartItemQuantity }) => {
 
-  const variants = Object.keys(cartitem.product_details.Product_variant);
-  const discount_price = cartitem.product_details.Product_variant[variants].ds_price
-  const orginal_price = cartitem.product_details.Product_variant[variants].og_price
   const [quantity, setQuantity] = useState(cartitem.quantity);
+  const [totalOrginalPrice, setTotalOrginalPrice] = useState(cartitem.product_pricing.original_price * quantity)
+  const [totalDiscountPrice, setTotalDiscountPrice] = useState(cartitem.product_pricing.discount_price * quantity)
+  const [openDialog, setOpenDialog] = useState(false);
 
-  const total_ds_price = discount_price * quantity
-  const total_og_price = orginal_price * quantity
+  useEffect(() => {
+
+    const csrfToken = document.cookie.match(/csrftoken=([\w-]+)/);
+    const csrfTokenValue = csrfToken ? csrfToken[1] : null;
+    console.log(csrfTokenValue, 'csrf')
+    const apiUrl = `/api/update-cart-item-quantity/${cartitem.id}/`;
+    console.log('quantity', quantity)
+
+    // Define the data to send in the POST request
+    const requestData = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfTokenValue,
+      },
+      body: JSON.stringify({ quantity: quantity }),
+    };
+
+    // Make the POST request to update the quantity in the database
+    fetch(apiUrl, requestData)
+      .then((response) => {
+        if (response.ok) {
+          // Quantity updated successfully
+          console.log('Quantity updated in the database');
+        } else {
+          // Handle the error
+          console.error('Failed to update quantity in the database');
+        }
+      })
+      .catch((error) => {
+        console.error('Error updating quantity:', error);
+      });
+
+    // Update totalOrginalPrice and totalDiscountPrice based on the new quantity
+    setTotalOrginalPrice(cartitem.product_pricing.original_price * quantity);
+    setTotalDiscountPrice(cartitem.product_pricing.discount_price * quantity);
+  }, [quantity, cartitem.id]);
+
+  const handleDialogOPen = () => {
+    // Open the dialog when the button is clicked
+    setOpenDialog(true);
+  };
+
+  const handleDialogClose = () => {
+    // Close the dialog
+    setOpenDialog(false);
+  };
+
 
 
   const handleQuantityChange = (event) => {
-    const newQuantity = parseInt(event.target.value, 10);
-    setQuantity(newQuantity);
+    
+    const newQuantity = parseInt(event.target.value);
+    if (newQuantity <= cartitem.product_variant.stock_quantity){ 
+      updateCartItemQuantity(cartitem.id, newQuantity);
+      setQuantity(newQuantity);
+      setTotalOrginalPrice(cartitem.product_pricing.original_price * newQuantity)
+      setTotalDiscountPrice(cartitem.product_pricing.discount_price * newQuantity)
+    }
+    else{
+      handleDialogOPen()
+    }
   };
 
   const handleIncrement = () => {
-    setQuantity(quantity + 1);
+
+    if (quantity + 1 <= cartitem.product_variant.stock_quantity){ 
+      updateCartItemQuantity(cartitem.id, quantity + 1);
+      setQuantity(quantity + 1);
+      setTotalOrginalPrice(cartitem.product_pricing.original_price * quantity)
+      setTotalDiscountPrice(cartitem.product_pricing.discount_price * quantity)
+    }
+    else{
+      handleDialogOPen()
+    }
   };
 
   const handleDecrement = () => {
     if (quantity > 1) {
+      updateCartItemQuantity(cartitem.id, quantity - 1);
       setQuantity(quantity - 1);
+      setTotalOrginalPrice(cartitem.product_pricing.original_price * quantity)
+      setTotalDiscountPrice(cartitem.product_pricing.discount_price * quantity)
     }
   };
+
+  
+
   return (
     <Stack
       justifyContent="center"
@@ -47,9 +118,9 @@ const CartPrice = ({cartitem}) => {
         marginBottom={1}
       >
         <Typography 
-        variant="h6"
+        variant="body2"
         >
-          ₹{total_ds_price}</Typography>
+          ₹{totalDiscountPrice.toFixed(2)}</Typography>
         <Typography
             variant="body2"
             style={{
@@ -57,7 +128,7 @@ const CartPrice = ({cartitem}) => {
             color: '#888', // Gray color
           }}
         >
-          ₹{total_og_price}
+          ₹{totalOrginalPrice.toFixed(2)}
         </Typography>
       </Stack>
 
@@ -92,6 +163,11 @@ const CartPrice = ({cartitem}) => {
           <AddIcon />
         </IconButton>
       </Stack>
+      <StockDialog 
+        openDialog={openDialog}
+        handleDialogClose={handleDialogClose}
+        quantity={cartitem.product_variant.stock_quantity}
+      />
     </Stack>
   )
 }

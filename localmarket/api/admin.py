@@ -17,6 +17,13 @@ class ProductVariantAdmin(admin.ModelAdmin):
 class ProductAdmin(admin.ModelAdmin):
     inlines = [ProductVariantInline ]
 
+class CartItemVariantInline(admin.TabularInline):
+    model = CartItem
+    extra = 0
+
+class CartAdmin(admin.ModelAdmin):
+    inlines = [CartItemVariantInline]
+
     
 
 admin.site.register(CustomUser)
@@ -28,6 +35,6 @@ admin.site.register(ProductPricing)
 admin.site.register(Order)
 admin.site.register(OrderDetails)
 admin.site.register(Delivery)
-admin.site.register(Cart)
+admin.site.register(Cart, CartAdmin)
 admin.site.register(CartItem)
 admin.site.register(Category)

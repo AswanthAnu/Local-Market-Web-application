@@ -9,7 +9,7 @@ import {
   Link,
   Snackbar,
   Grid,
-  Alert
+  Alert,
 } from '@mui/material';
 import LocalFloristIcon from '@mui/icons-material/LocalFlorist';
 
@@ -22,28 +22,58 @@ const RegisterCard = () => {
   const [error, setError] = useState(false);
   const [errorPassword, setErrorPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false); // Added state for Snackbar
+  const [snackbarMessage, setSnackbarMessage] = useState(''); // Added state for Snackbar
 
-  const handleRegister = () => {
-    // Check if any field is empty
+  const handleRegister = async () => {
     if (!firstName || !lastName || !username || !password1 || !password2) {
       setError(true);
       setErrorMessage('All fields are required.');
-      setPassword1('')
-      setPassword2('')
+      setPassword1('');
+      setPassword2('');
       return;
     }
 
-    // Check if passwords match
     if (password1 !== password2) {
       setErrorPassword(true);
       setErrorMessage('Passwords do not match.');
-      setPassword2('')
+      setPassword2('');
       return;
     }
 
-    // Replace this with your actual registration logic
-    // You can use the firstName, lastName, username, and password1 values here
-    // to perform the registration.
+    const registrationData = {
+      first_name: firstName,
+      last_name: lastName,
+      username,
+      password: password1,
+    };
+
+    try {
+      const response = await fetch('/api/register/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registrationData),
+      });
+
+      if (response.ok) {
+        setSnackbarMessage('Registered successfully');
+        setSnackbarOpen(true);
+        window.location.href = '/login';
+      } else {
+        const errorData = await response.json();
+        setError(true);
+        setErrorMessage(errorData.detail || 'Registration failed.');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+    }
+  };
+
+  // Function to handle Snackbar close
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
   };
 
   return (
@@ -111,8 +141,8 @@ const RegisterCard = () => {
                 margin="normal"
                 value={password2}
                 onChange={(e) => setPassword2(e.target.value)}
-                error={errorPassword} // Set error prop to display error state
-                helperText={errorPassword && 'Passwords do not match.'} // Display error message
+                error={errorPassword}
+                helperText={errorPassword && 'Passwords do not match.'}
               />
             </Grid>
           </Grid>
@@ -132,6 +162,15 @@ const RegisterCard = () => {
               </Alert>
             </Snackbar>
           )}
+          <Snackbar
+            open={snackbarOpen}
+            autoHideDuration={6000}
+            onClose={handleSnackbarClose}
+          >
+            <Alert severity="success" onClose={handleSnackbarClose}>
+              {snackbarMessage}
+            </Alert>
+          </Snackbar>
           <Typography variant="body2" style={{ textAlign: 'center', marginTop: '16px' }}>
             Already have an account? <Link href="/login">Login here</Link>
           </Typography>

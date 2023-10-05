@@ -21,8 +21,8 @@ const Navbar = () => {
             <Link
               to="/"
               style={{
-                textDecoration: 'none', // Remove underline
-                color: 'inherit', // Inherit color from typography
+                textDecoration: 'none', 
+                color: 'inherit',
               }}
             >
               Local Market

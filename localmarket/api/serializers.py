@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Product, ProductVariant, ProductPricing, Category
+from .models import CustomUser, Product, ProductVariant, ProductPricing, CartItem
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,4 +38,34 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = "__all__"
+
+
+class CartItemSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    product_variant = serializers.SerializerMethodField()
+    product_pricing = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CartItem
+        fields = '__all__'
+
+    def get_product(self, obj):
+        return {
+            'product_name': obj.variant.product.product_name,
+            'image': obj.variant.product.image.url,
+        }
+
+    def get_product_variant(self, obj):
+        return {
+            'weight': obj.variant.weight,
+            'weight_unit': obj.variant.weight_unit,
+            'stock_quantity': obj.variant.stock_quantity,
+        }
+
+    def get_product_pricing(self, obj):
+        return {
+            'original_price': obj.variant.productpricing.original_price,
+            'discount': obj.variant.productpricing.discount,
+            'discount_price': obj.variant.productpricing.discount_price,
+        }
 

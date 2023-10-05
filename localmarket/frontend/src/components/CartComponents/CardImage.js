@@ -11,7 +11,7 @@ const CardImage = ({cartitem, index}) => {
         alt={`Image for item ${index}`}
         
         style={{ objectFit: 'cover' }}
-        image={cartitem.product_details.image}
+        image={cartitem.product.image}
     />
   )
 }

@@ -7,6 +7,8 @@ import {
   TextField,
   Button,
   Link,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import LocalFloristIcon from '@mui/icons-material/LocalFlorist';
 
@@ -14,17 +16,37 @@ const LoginCard = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false); // Use snackbarOpen state
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  const handleLogin = () => {
-    // Replace this with your actual login logic
-    if (username === 'yourUsername' && password === 'yourPassword') {
-      // Successful login logic
-      setError(false);
-    } else {
-      // Failed login logic
+  const handleLogin = async () => {
+    try {
+      const response = await fetch('/api/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data.token, 'token returned')
+        localStorage.setItem('token', data.token);
+        setSnackbarMessage('Logged in successfully');
+        setSnackbarOpen(true); 
+        window.location.href = '/';
+      } else {
+        const errorMessage = await response.text(); 
+        setError(true);
+        console.error('Error during login:', errorMessage);
+      }
+    } catch (error) {
       setError(true);
+      console.error('Error during login:', error);
     }
   };
+  
 
   return (
     <Container maxWidth="xs">
@@ -73,6 +95,11 @@ const LoginCard = () => {
           </Typography>
         </CardContent>
       </Card>
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={() => setSnackbarOpen(false)}>
+        <Alert severity="success" onClose={() => setSnackbarOpen(false)}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

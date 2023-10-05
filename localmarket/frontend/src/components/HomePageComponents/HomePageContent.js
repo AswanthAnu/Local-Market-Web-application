@@ -11,7 +11,9 @@ import {Container,
         MenuItem, 
         Select,
         Stack,
-        IconButton
+        IconButton,
+        Snackbar,
+        Alert,
 } from '@mui/material';
 import RemoveShoppingCartIcon from '@mui/icons-material/RemoveShoppingCart';
 import SearchField from '../SearchFieldComponents/SearchField';
@@ -25,6 +27,9 @@ const HomePageContent = () => {
   const [selectedVariants, setSelectedVariants] = useState([])
   const [uniqueCategories, setUniqueCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
 
   useEffect(() => {
     const apiUrl = '/api/products/'
@@ -77,6 +82,39 @@ const HomePageContent = () => {
     console.log('product',products),
     console.log("selectvariants", selectedVariants)
     console.log('---------------------------------------------------------------------')
+  // add to cart ----------------------------------------------------- 
+  const addToCart = async (variantId) => {
+    console.log(variantId, 'variant id')
+    try {
+      
+      const csrfToken = document.cookie.match(/csrftoken=([\w-]+)/);
+      const csrfTokenValue = csrfToken ? csrfToken[1] : null;
+      console.log(csrfToken, 'csrf')
+      const response = await fetch(`/api/add-to-cart/${variantId}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfTokenValue,
+        },
+        body: JSON.stringify({ quantity: 1 }),
+      });
+
+      console.log(response, 'response')
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      setSnackbarMessage('Item added to cart successfully');
+      setSnackbarOpen(true); 
+      console.log('Item added to cart:', data);
+    } catch (error) {
+      console.error('Error adding item to cart: ', error);
+    }
+  };
+
+
 
 
   return (
@@ -186,7 +224,12 @@ const HomePageContent = () => {
                       </CardContent>
                       <CardActions>
                         {selectedVariants[index] && product.variants.find((variant) => variant.id === selectedVariants[index]).stock_quantity ? (
-                          <Button variant="contained" color="primary" size="small" fullWidth 
+                          <Button 
+                            variant="contained" 
+                            color="primary" 
+                            size="small" 
+                            fullWidth 
+                            onClick={() => addToCart(selectedVariants[index])}
                           >
                             Add to Cart
                           </Button>
@@ -199,6 +242,11 @@ const HomePageContent = () => {
                         )}
                       </CardActions>
                     </Card>
+                    <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={() => setSnackbarOpen(false)}>
+                      <Alert severity="success" onClose={() => setSnackbarOpen(false)}>
+                        {snackbarMessage}
+                      </Alert>
+                    </Snackbar>
                 </Grid>
               ))}
             </Grid>
