@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
-from .serializers import UserSerializer, ProductSerializer, CartItemSerializer
+from .serializers import UserSerializer, ProductSerializer, CartItemSerializer, OrderSummaryCartItemSerializer
 from .models import CustomUser, Product, Category, Cart, CartItem, ProductVariant, CartItem
 from django.http import JsonResponse
 from django.views import View
@@ -153,3 +153,35 @@ class UpdateCartItemQuantity(APIView):
                 return Response({'error': 'Insufficient stock quantity'}, status=status.HTTP_400_BAD_REQUEST)
         except CartItem.DoesNotExist:
             return Response({'error': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+@api_view(['DELETE'])
+def remove_cart_item(request, cart_item_id):
+    try:
+        # Get the cart item by ID
+        cart_item = CartItem.objects.get(pk=cart_item_id)
+
+        # Check if the cart item belongs to the current user (add your own logic)
+        if cart_item.cart.staff_user != request.user:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Delete the cart item
+        cart_item.delete()
+
+        return Response({'message': 'Cart item removed successfully'}, status=status.HTTP_204_NO_CONTENT)
+    except CartItem.DoesNotExist:
+        return Response({'error': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+class OrderSummaryCartItemListView(generics.ListAPIView):
+    serializer_class = OrderSummaryCartItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        print(self.request.user, ' --> user at ordersummary')
+        staff_user = self.request.user
+        try:
+            cart = Cart.objects.get(staff_user=staff_user, status='active')
+            return CartItem.objects.filter(cart=cart)
+        except Cart.DoesNotExist:
+            return CartItem.objects.none()

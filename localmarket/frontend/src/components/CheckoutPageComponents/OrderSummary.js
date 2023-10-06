@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useState} from 'react'
 import { 
     List,
     Typography,
@@ -19,24 +19,26 @@ const useStyles = makeStyles((theme) => ({
 const OrderSummary = ({cartitems}) => {
 
     const classes = useStyles();
-    let numberOfCartItems = 0;
-    let originalPrice = 0;
-    let finalPrice = 0;
-    let discount_sum = 0;
-  
-    for (const cartitem of cartitems) {
-        numberOfCartItems = numberOfCartItems + cartitem.quantity
-        const key = Object.keys(cartitem.product_details.Product_variant);
-        const og_value = cartitem.product_details.Product_variant[key].og_price;
-        originalPrice = originalPrice + (og_value *  cartitem.quantity)
-        const ds_value = cartitem.product_details.Product_variant[key].ds_price;
-        finalPrice = finalPrice + (ds_value * cartitem.quantity)
-        const ds = cartitem.product_details.Product_variant[key].discount;
-        discount_sum = discount_sum + ds
-        
-    }
+    let cartAmount = 0;
+    let finalCartAmount = 0;
+    let totalDiscount = 0;
+    let cartDiscount = 0;
 
-    const discount = Math.round(discount_sum/numberOfCartItems)
+    
+
+    cartitems.forEach((cartItem) => {
+        const originalPrice = cartItem.product_pricing.original_price;
+        const quantity = cartItem.quantity;
+        const discountPrice = cartItem.product_pricing.discount_price
+        const discount = cartItem.product_pricing.discount
+        cartAmount += originalPrice * quantity;
+        finalCartAmount += discountPrice * quantity
+        totalDiscount += discount
+
+      });
+    const numberOfCartItems = cartitems.length
+
+    cartDiscount = Math.round(totalDiscount/numberOfCartItems)
 
   return (
     <Stack>
@@ -56,21 +58,21 @@ const OrderSummary = ({cartitems}) => {
                     primary="Orginal Price"
                     className={classes.keyListItemText}
                 />
-                <Typography variant="body2"  style={{ color: "red" }}>{`₹${originalPrice}`}</Typography>
+                <Typography variant="body2"  style={{ color: "red" }}>{`₹${cartAmount.toFixed(2)}`}</Typography>
             </ListItem>
             <ListItem>
                 <ListItemText
                     primary="Discount"
                     className={classes.keyListItemText}
                 />
-                <Typography variant="body2"  style={{ color: "green" }}>{`${discount}%`}</Typography>
+                <Typography variant="body2"  style={{ color: "green" }}>{`${cartDiscount.toFixed(2)}%`}</Typography>
             </ListItem>
             <ListItem>
                 <ListItemText
                     primary="Final Price"
                     className={classes.keyListItemText}
                 />
-                <Typography variant="body2" style={{ fontWeight: "bold" }}>{`₹${finalPrice}`}</Typography>
+                <Typography variant="body2" style={{ fontWeight: "bold" }}>{`₹${finalCartAmount.toFixed(2)}`}</Typography>
             </ListItem>
         </List>
     </Stack>

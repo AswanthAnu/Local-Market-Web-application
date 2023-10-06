@@ -128,7 +128,11 @@ const Cart = () => {
             flexDirection: isXsScreen ? 'column' : 'row',
           }}
         >
-          <CartItemsCard cartitems={cartItems} updateCartItemQuantity={updateCartItemQuantity} />
+          <CartItemsCard 
+            cartitems={cartItems} 
+            updateCartItemQuantity={updateCartItemQuantity} 
+            setCartItems={setCartItems}
+          />
           <OrderSummaryCard cartitems={cartItems}/>
 
         </Grid>

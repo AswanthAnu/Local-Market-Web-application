@@ -5,7 +5,7 @@ import {
 } from '@mui/material'
 import Cards from './Cards'
 
-const CartItemsCard = ({cartitems, updateCartItemQuantity }) => {
+const CartItemsCard = ({cartitems, updateCartItemQuantity, setCartItems}) => {
   return (
     <Grid 
         item 
@@ -25,7 +25,8 @@ const CartItemsCard = ({cartitems, updateCartItemQuantity }) => {
                 <Cards 
                     cartitem={cartitem}
                     index={index}
-                    updateCartItemQuantity={updateCartItemQuantity} 
+                    updateCartItemQuantity={updateCartItemQuantity}
+                    setCartItems={setCartItems} 
                 />
                             )
                         )

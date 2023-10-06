@@ -4,7 +4,7 @@ import {
 } from '@mui/material'
 import DialogRemove from './DialogRemove';
 
-const CartItemRemove = () => {
+const CartItemRemove = ({cartitem, setCartItems}) => {
 
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -18,13 +18,54 @@ const CartItemRemove = () => {
     setOpenDialog(false);
   };
 
+  // CartItemRemove.js
+  const fetchUpdatedCart = () => {
+    const apiUrl = '/api/cart/';
+    const token = localStorage.getItem('token');
+  
+    fetch(apiUrl, {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Update your cart state with the new data
+        setCartItems(data.results);
+      })
+      .catch((error) => {
+        console.error('Error fetching updated cart data:', error);
+      });
+  };
+
+  
   const handleRemoveConfirmed = () => {
-    // Handle the removal action here
-    // You can add your logic to remove the item from the cart
-    // For example, call an API to remove the item from the backend
-    // Then close the dialog
+    // Make an API request to remove the cart item
+    const apiUrl = `/api/remove-cart-item/${cartitem.id}/`;
+
+    fetch(apiUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Token ${localStorage.getItem('token')}`, // Add your authentication headers
+      },
+    })
+      .then((response) => {
+        if (response.ok) {
+          fetchUpdatedCart()
+          console.log('Cart item removed successfully');
+        } else {
+          // Handle error (e.g., show an error message)
+          console.error('Failed to remove cart item');
+        }
+      })
+      .catch((error) => {
+        console.error('Error removing cart item:', error);
+      });
+
+    // Close the dialog
     setOpenDialog(false);
   };
+
   
   return (
     <Stack>

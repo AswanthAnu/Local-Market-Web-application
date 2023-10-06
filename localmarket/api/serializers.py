@@ -69,3 +69,18 @@ class CartItemSerializer(serializers.ModelSerializer):
             'discount_price': obj.variant.productpricing.discount_price,
         }
 
+
+class OrderSummaryCartItemSerializer(serializers.ModelSerializer):
+    product_pricing = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CartItem
+        fields = '__all__'
+
+   
+    def get_product_pricing(self, obj):
+        return {
+            'original_price': obj.variant.productpricing.original_price,
+            'discount': obj.variant.productpricing.discount,
+            'discount_price': obj.variant.productpricing.discount_price,
+        }
