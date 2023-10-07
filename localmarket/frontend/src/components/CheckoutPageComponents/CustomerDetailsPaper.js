@@ -4,7 +4,7 @@ import {
 } from '@mui/material'
 import CustomerForm from './CustomerForm'
 
-const CustomerDetailsPaper = () => {
+const CustomerDetailsPaper = ({cartitems}) => {
   return (
     <Grid 
         item 
@@ -20,7 +20,7 @@ const CustomerDetailsPaper = () => {
             padding: '12px'
             }}
         >
-            <CustomerForm />
+            <CustomerForm cartitems={cartitems}/>
         </Paper>
     </Grid>
   )

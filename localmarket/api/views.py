@@ -7,8 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
-from .serializers import UserSerializer, ProductSerializer, CartItemSerializer, OrderSummaryCartItemSerializer
-from .models import CustomUser, Product, Category, Cart, CartItem, ProductVariant, CartItem
+from .serializers import UserSerializer, ProductSerializer, CartItemSerializer, OrderSummaryCartItemSerializer, CustomerSerializer, OrderDetailsSerializer
+from .models import CustomUser, Product, Category, Cart, CartItem, ProductVariant, CartItem, Customer, Order, OrderDetails, CustomerAddress
 from django.http import JsonResponse
 from django.views import View
 from rest_framework.views import APIView
@@ -185,3 +185,84 @@ class OrderSummaryCartItemListView(generics.ListAPIView):
             return CartItem.objects.filter(cart=cart)
         except Cart.DoesNotExist:
             return CartItem.objects.none()
+        
+@api_view(['POST'])
+def create_order(request):
+    customer_data = request.data.get('customer')
+    order_details_data = request.data.get('order_details')
+    cart_id = order_details_data['cart_id']  # Get cart_id from the data sent from the frontend
+    print('current user', request.user)
+    custom_user = request.user
+
+    # Check if the customer already exists based on phone_number
+    customer, created = Customer.objects.get_or_create(phone_number=customer_data['phone_number'], defaults={
+        'first_name': customer_data['first_name'],
+        'last_name': customer_data['last_name'],
+        'custom_user': custom_user  # Associate with the CustomUser
+    })
+
+    # Create a new CustomerAddress for the customer
+    customer_address = CustomerAddress.objects.create(
+        customer=customer,
+        address_line1=customer_data['address_line1'],
+        address_line2=customer_data.get('address_line2', ''),  # Handle optional field
+        street_name=customer_data['street_name'],
+        city=customer_data['city'],
+        pincode=customer_data['pincode']
+    )
+   
+    # Create an order for the customer
+    order = Order.objects.create(
+        customer=customer,
+        total_amount=order_details_data['total_amount'],
+        total_discount=float(order_details_data['total_discount']),
+        discount_amount=order_details_data['discount_amount']
+    )
+
+    print('order', order)
+
+    order_details_list = []
+
+    # Create order details and add them to the list
+    for order_detail_data in order_details_data['order_details']:
+        order_detail = OrderDetails(
+            order=order,
+            product_id=order_detail_data['product'],
+            variant_id=order_detail_data['variant'],
+            quantity=int(order_detail_data['quantity']),
+            total_price=order_detail_data['total_price'],
+            discount=order_detail_data['discount'],
+            discount_price=order_detail_data['discount_price']
+        )
+        order_details_list.append(order_detail)
+
+    # Bulk create order details
+    OrderDetails.objects.bulk_create(order_details_list)
+    print('order details', OrderDetails)
+
+    # Update cart status to completed
+    try:
+        cart = Cart.objects.get(id=cart_id)
+        cart.status = 'completed'
+        cart.save()
+    except Cart.DoesNotExist:
+        Cart.objects.none()
+
+    # Reduce the stock quantity of the product variants
+    for order_detail in order_details_list:
+        product_variant_id = order_detail.variant_id
+        quantity = order_detail.quantity
+        try:
+            cart_item = CartItem.objects.get(cart=cart, variant_id=product_variant_id)
+            cart_item_quantity = cart_item.quantity
+            if cart_item_quantity >= quantity:
+                # Reduce the stock quantity
+                product_variant = cart_item.variant
+                product_variant.stock_quantity -= quantity
+                product_variant.save()  # Save the product variant after reducing the stock
+            else:
+                return Response({'message': 'Not enough stock'}, status=status.HTTP_400_BAD_REQUEST)
+        except CartItem.DoesNotExist:
+            CartItem.objects.none()  # Handle the case where the cart item does not exist
+
+    return Response({'message': 'Order created successfully'}, status=status.HTTP_201_CREATED)

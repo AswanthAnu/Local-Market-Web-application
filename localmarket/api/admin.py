@@ -24,10 +24,17 @@ class CartItemVariantInline(admin.TabularInline):
 class CartAdmin(admin.ModelAdmin):
     inlines = [CartItemVariantInline]
 
+class CustomerAddressInline(admin.TabularInline):
+    model = CustomerAddress
+    extra = 0
+
+class CustomerAdmin(admin.ModelAdmin):
+    inlines = [CustomerAddressInline]
+
     
 
 admin.site.register(CustomUser)
-admin.site.register(Customer)
+admin.site.register(Customer, CustomerAdmin)
 admin.site.register(CustomerAddress)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(ProductVariant, ProductVariantAdmin)
