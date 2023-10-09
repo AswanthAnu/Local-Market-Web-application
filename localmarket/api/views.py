@@ -7,12 +7,14 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
-from .serializers import UserSerializer, ProductSerializer, CartItemSerializer, OrderSummaryCartItemSerializer, CustomerSerializer, OrderDetailsSerializer
-from .models import CustomUser, Product, Category, Cart, CartItem, ProductVariant, CartItem, Customer, Order, OrderDetails, CustomerAddress
+from .serializers import UserSerializer, ProductSerializer, CartItemSerializer, OrderSummaryCartItemSerializer, OrdersSerializer, CustomerSerializer, CustomerAddressSerializer
+from .models import CustomUser, Product, Category, Cart, CartItem, ProductVariant, CartItem, Customer, Order, OrderDetails, CustomerAddress, Delivery
 from django.http import JsonResponse
 from django.views import View
 from rest_framework.views import APIView
 from django.contrib.auth import login
+from django.utils import timezone
+from django.db import transaction
 
 
 @api_view(['POST'])
@@ -201,15 +203,27 @@ def create_order(request):
         'custom_user': custom_user  # Associate with the CustomUser
     })
 
-    # Create a new CustomerAddress for the customer
-    customer_address = CustomerAddress.objects.create(
-        customer=customer,
-        address_line1=customer_data['address_line1'],
-        address_line2=customer_data.get('address_line2', ''),  # Handle optional field
-        street_name=customer_data['street_name'],
-        city=customer_data['city'],
-        pincode=customer_data['pincode']
-    )
+    with transaction.atomic():
+        if not created:
+            # If the customer already exists, update the CustomerAddress
+            try:
+                customer_address = CustomerAddress.objects.get(customer=customer)
+                customer_address.address_line1 = customer_data['address_line1']
+                customer_address.address_line2 = customer_data.get('address_line2', '')  # Handle optional field
+                customer_address.street_name = customer_data['street_name']
+                customer_address.city = customer_data['city']
+                customer_address.pincode = customer_data['pincode']
+                customer_address.save()
+            except CustomerAddress.DoesNotExist:
+                # Handle the case where the customer exists but doesn't have a CustomerAddress (create one)
+                customer_address = CustomerAddress.objects.create(
+                    customer=customer,
+                    address_line1=customer_data['address_line1'],
+                    address_line2=customer_data.get('address_line2', ''),  # Handle optional field
+                    street_name=customer_data['street_name'],
+                    city=customer_data['city'],
+                    pincode=customer_data['pincode']
+                )
    
     # Create an order for the customer
     order = Order.objects.create(
@@ -218,6 +232,8 @@ def create_order(request):
         total_discount=float(order_details_data['total_discount']),
         discount_amount=order_details_data['discount_amount']
     )
+
+    delivery = Delivery.objects.create(order=order, delivery_status="pending")
 
     print('order', order)
 
@@ -266,3 +282,58 @@ def create_order(request):
             CartItem.objects.none()  # Handle the case where the cart item does not exist
 
     return Response({'message': 'Order created successfully'}, status=status.HTTP_201_CREATED)
+
+class OrdersListView(generics.ListAPIView):
+    serializer_class = OrdersSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Order.objects.order_by('-order_date')
+    
+@api_view(['PUT'])
+def update_delivery_status(request, order_id):
+    try:
+        delivery = Delivery.objects.get(order_id=order_id)
+        new_status = request.data.get('delivery_status')
+        
+        # Update delivery_status
+        delivery.delivery_status = new_status
+
+        if new_status == 'delivered':
+            # If the new_status is 'delivered', set delivery_date to the current timestamp
+            delivery.delivery_date = timezone.now()
+        elif new_status == 'pending':
+            # If the new_status is 'pending', set delivery_date to None
+            delivery.delivery_date = None
+
+        delivery.save()
+
+        return Response({'message': 'Delivery status updated successfully'}, status=status.HTTP_200_OK)
+    except Delivery.DoesNotExist:
+        return Response({'message': 'Delivery not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+class CheckPhoneNumberExists(APIView):
+    def get(self, request):
+        phone_number = request.query_params.get('phone_number')
+        print(phone_number)
+        
+        try:
+            # Check if a customer with the given phone number exists
+            customer = Customer.objects.get(phone_number=phone_number)
+            
+            # Retrieve the associated customer address
+            customer_address = CustomerAddress.objects.get(customer=customer)
+            
+            # Serialize the data
+            customer_data = CustomerSerializer(customer).data
+            customer_address_data = CustomerAddressSerializer(customer_address).data
+
+            print(customer_data, "customer_data")
+            
+            return Response({
+                'exists': True,
+                'customer': customer_data,
+                'customerAddress': customer_address_data,
+            })
+        except Customer.DoesNotExist:
+            return Response({'exists': False}, status=status.HTTP_404_NOT_FOUND)

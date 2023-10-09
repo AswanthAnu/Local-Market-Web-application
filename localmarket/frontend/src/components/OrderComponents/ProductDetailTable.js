@@ -9,7 +9,7 @@ import {
     Paper
 } from '@mui/material'
 
-const ProductDetailTable = ({order}) => {
+const ProductDetailTable = ({orderItems}) => {
 
     
   return (
@@ -27,22 +27,19 @@ const ProductDetailTable = ({order}) => {
                 </TableRow>
             </TableHead>
             <TableBody>
-      {order.order_products.map((row, index) => {
-        const productName = row.product_details.product_name;
-        const variant = Object.keys(row.product_details.Product_variant)[0];
-        const variantData = row.product_details.Product_variant[variant];
+      {orderItems.map((row, index) => {
         return (
           <TableRow
             key={index + 1}
             sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
           >
             <TableCell>{index + 1}</TableCell>
-            <TableCell>{productName}</TableCell>
-            <TableCell>1</TableCell>
-            <TableCell>{variant}</TableCell>
-            <TableCell>{variantData.og_price}</TableCell>
-            <TableCell>{variantData.discount}%</TableCell>
-            <TableCell>{variantData.ds_price}</TableCell>
+            <TableCell>{row.product_name}</TableCell>
+            <TableCell>{`${row.variant_weight} ${row.variant_weight_unit}`}</TableCell>
+            <TableCell>{row.quantity}</TableCell>
+            <TableCell>{row.original_price}</TableCell>
+            <TableCell>{row.discount}%</TableCell>
+            <TableCell>{row.discount_price}</TableCell>
           </TableRow>
         );
       })}

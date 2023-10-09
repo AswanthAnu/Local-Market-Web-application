@@ -1,335 +1,110 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Accordion, 
   AccordionSummary, 
   AccordionDetails, 
   Container, 
   Stack,
-  Typography
+  Typography,
+  Box,
+  Button
 } from '@mui/material'
-
 import { ExpandMore } from '@material-ui/icons';
+import { useNavigate } from 'react-router-dom';
 import OrderAccordianSummary from './OrderAccordianSummary';
 import OrderAccordianDetails from './OrderAccordianDetails';
-
-const Orders = [
-  {
-    order_id: 1,
-    customer_name: 'Customer 1',
-    customer_address: {
-      add_line_1: 'Test address line 1',
-      add_line_2: 'Test address line 2',
-      street_address: 'Test street address',
-      city: 'Test city',
-      zip_code: 87656,
-    },
-    customer_phone: 9867456765,
-    order_products: [
-      {
-        product_details: {
-          product_name: 'Capsicum',
-          Product_variant: {
-            '500 g': {
-              og_price: 100,
-              discount: 20,
-              ds_price: 80,
-            },
-          },
-        },
-      },
-      {
-        product_details: {
-          product_name: 'Pears',
-          Product_variant: {
-            '125 g': {
-              og_price: 58,
-              discount: 20,
-              ds_price: 47,
-            },
-          },
-        },
-      },
-      {
-        product_details: {
-          product_name: 'Horlicks',
-          Product_variant: {
-            '250 g': {
-              og_price: 210,
-              discount: 15,
-              ds_price: 179,
-            },
-          },
-        },
-      },
-    ],
-  },
-  {
-    order_id: 2,
-    customer_name: 'Customer 2',
-    customer_address: {
-      add_line_1: 'Test address line 1',
-      add_line_2: 'Test address line 2',
-      street_address: 'Test street address',
-      city: 'Test city',
-      zip_code: 76543,
-    },
-    customer_phone: 9876543210,
-    order_products: [
-      {
-        product_details: {
-          product_name: 'Bananas',
-          Product_variant: {
-            '1 dozen': {
-              og_price: 120,
-              discount: 10,
-              ds_price: 108,
-            },
-          },
-        },
-      },
-      {
-        product_details: {
-          product_name: 'Apples',
-          Product_variant: {
-            '5 kg': {
-              og_price: 250,
-              discount: 20,
-              ds_price: 200,
-            },
-          },
-        },
-      },
-    ],
-  },
-  {
-    order_id: 3,
-    customer_name: 'Customer 3',
-    customer_address: {
-      add_line_1: 'Test address line 1',
-      add_line_2: 'Test address line 2',
-      street_address: 'Test street address',
-      city: 'Test city',
-      zip_code: 54321,
-    },
-    customer_phone: 9876123450,
-    order_products: [
-      {
-        product_details: {
-          product_name: 'Tomatoes',
-          Product_variant: {
-            '1 kg': {
-              og_price: 80,
-              discount: 15,
-              ds_price: 68,
-            },
-          },
-        },
-      },
-      {
-        product_details: {
-          product_name: 'Milk',
-          Product_variant: {
-            '1 liter': {
-              og_price: 50,
-              discount: 5,
-              ds_price: 47.5,
-            },
-          },
-        },
-      },
-    ],
-  },
-  {
-    order_id: 4,
-    customer_name: 'Customer 4',
-    customer_address: {
-      add_line_1: 'Test address line 1',
-      add_line_2: 'Test address line 2',
-      street_address: 'Test street address',
-      city: 'Test city',
-      zip_code: 65432,
-    },
-    customer_phone: 9876540987,
-    order_products: [
-      {
-        product_details: {
-          product_name: 'Potatoes',
-          Product_variant: {
-            '2 kg': {
-              og_price: 90,
-              discount: 10,
-              ds_price: 81,
-            },
-          },
-        },
-      },
-      {
-        product_details: {
-          product_name: 'Bread',
-          Product_variant: {
-            '1 loaf': {
-              og_price: 30,
-              discount: 5,
-              ds_price: 28.5,
-            },
-          },
-        },
-      },
-    ],
-  },
-  {
-    order_id: 5,
-    customer_name: 'Customer 5',
-    customer_address: {
-      add_line_1: 'Test address line 1',
-      add_line_2: 'Test address line 2',
-      street_address: 'Test street address',
-      city: 'Test city',
-      zip_code: 76543,
-    },
-    customer_phone: 9876543210,
-    order_products: [
-      {
-        product_details: {
-          product_name: 'Oranges',
-          Product_variant: {
-            '1 dozen': {
-              og_price: 80,
-              discount: 10,
-              ds_price: 72,
-            },
-          },
-        },
-      },
-      {
-        product_details: {
-          product_name: 'Eggs',
-          Product_variant: {
-            '1 dozen': {
-              og_price: 36,
-              discount: 5,
-              ds_price: 34.2,
-            },
-          },
-        },
-      },
-    ],
-  },
-  {
-    order_id: 6,
-    customer_name: 'Customer 6',
-    customer_address: {
-      add_line_1: 'Test address line 1',
-      add_line_2: 'Test address line 2',
-      street_address: 'Test street address',
-      city: 'Test city',
-      zip_code: 87654,
-    },
-    customer_phone: 9876545678,
-    order_products: [
-      {
-        product_details: {
-          product_name: 'Onions',
-          Product_variant: {
-            '1 kg': {
-              og_price: 50,
-              discount: 10,
-              ds_price: 45,
-            },
-          },
-        },
-      },
-      {
-        product_details: {
-          product_name: 'Cheese',
-          Product_variant: {
-            '250 g': {
-              og_price: 120,
-              discount: 15,
-              ds_price: 102,
-            },
-          },
-        },
-      },
-    ],
-  },
-  {
-    order_id: 7,
-    customer_name: 'Customer 7',
-    customer_address: {
-      add_line_1: 'Test address line 1',
-      add_line_2: 'Test address line 2',
-      street_address: 'Test street address',
-      city: 'Test city',
-      zip_code: 98765,
-    },
-    customer_phone: 9876534567,
-    order_products: [
-      {
-        product_details: {
-          product_name: 'Cucumbers',
-          Product_variant: {
-            '500 g': {
-              og_price: 60,
-              discount: 10,
-              ds_price: 54,
-            },
-          },
-        },
-      },
-      {
-        product_details: {
-          product_name: 'Yogurt',
-          Product_variant: {
-            '500 ml': {
-              og_price: 40,
-              discount: 5,
-              ds_price: 38,
-            },
-          },
-        },
-      },
-    ],
-  },
-];
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 
 
 
 const OrdersPage = () => {
 
   const [expandedPanel, setExpandedPanel] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const apiUrl = '/api/orders/'
+    const token = localStorage.getItem('token')
+    console.log("entered into order")
+    fetch(apiUrl, {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    }).then((response) => response.json()).then((data) => {
+      console.log(data, 'orders data')
+      setOrders(data)
+      
+      setLoading(false);
+    })
+    .catch((error) => {
+      console.error('Error fetching data: ', error)
+    })
+  }, [])
+
 
   const handleAccordionChange = (panel) => (event, isExpanded) => {
     console.log({ event, isExpanded });
     setExpandedPanel(isExpanded ? panel : false);
   };
 
+  const handleBackHome = () => {
+    navigate('/');
+  }
+
   return (
+    !loading && (
+      <Container maxWidth="lg" style={{ marginTop: '30px', marginBottom: '30px'}}>
+        <Typography variant="h4"  style={{ marginBottom: '20px', fontWeight: 'bold', textAlign:'center'}}>
+          Orders
+        </Typography>
+        {orders.length === 0 ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '60vh',
+            }}
+          >
+            <ShoppingCartIcon
+              sx={{ fontSize: '64px', color: 'gray' }}
+            />
+            <Typography variant="h6" color="textSecondary">
+              There are no orders placed yet...!
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              style={{ marginTop: '20px' }}
+              onClick={handleBackHome}
+            >
+              Back to Home
+            </Button>
+          </Box>
+        ) : (
+          <Stack spacing={2}>
+            
+            {orders.map((order, index)=>(
+            <Accordion expanded={expandedPanel === 'panel' + index } onChange={handleAccordionChange('panel' + index)}>
 
-    <Container maxWidth="lg" style={{ marginTop: '30px', marginBottom: '30px'}}>
-      <Typography variant="h4"  style={{ marginBottom: '20px', fontWeight: 'bold', textAlign:'center'}}>
-        Orders
-      </Typography>
+              <AccordionSummary  expandIcon={<ExpandMore />}>
+                <OrderAccordianSummary order={order}/>
+              </AccordionSummary>
 
-      <Stack spacing={2}>
-        
-        {Orders.map((order, index)=>(
-        <Accordion expanded={expandedPanel === 'panel' + index } onChange={handleAccordionChange('panel' + index)}>
+              <AccordionDetails>
+                <OrderAccordianDetails order={order}/>
+              </AccordionDetails>
 
-          <AccordionSummary  expandIcon={<ExpandMore />}>
-            <OrderAccordianSummary order={order}/>
-          </AccordionSummary>
+            </Accordion>
+            ))}
 
-          <AccordionDetails>
-            <OrderAccordianDetails order={order}/>
-          </AccordionDetails>
-
-        </Accordion>
-        ))}
-
-      </Stack>
-
-    </Container>
+          </Stack>
+        )}
+      </Container>
+    )
   )
 }
 

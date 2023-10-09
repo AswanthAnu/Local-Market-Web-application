@@ -10,7 +10,7 @@ import {
 import ProductDetailTable from './ProductDetailTable'
 
 
-const ProductDetailTableDialog = ({open, setOpen, order}) => {
+const ProductDetailTableDialog = ({open, setOpen, orderItems}) => {
    
   return (
     <Dialog
@@ -18,12 +18,12 @@ const ProductDetailTableDialog = ({open, setOpen, order}) => {
         onClose={() => setOpen(false)}
         aria-labelledby='dialog-title'
         aria-describedby='dialog-description'
-        PaperProps={{ style: { maxWidth: "100vh" } }}
+        PaperProps={{ style: { maxWidth: "120vh" } }}
     >
         <DialogTitle id='dialog-title'>Product List</DialogTitle>
         <DialogContent>
             <DialogContentText id='dialog-descripton'>
-                <ProductDetailTable order={order}/>
+                <ProductDetailTable orderItems={orderItems}/>
             </DialogContentText>
         </DialogContent>
         <DialogActions>

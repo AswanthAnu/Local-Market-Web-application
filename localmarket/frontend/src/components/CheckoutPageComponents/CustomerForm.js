@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TextField, 
   Button, 
@@ -29,6 +29,13 @@ const CustomerForm = ({ cartitems }) => {
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (formData.phoneNumber.length === 10) {
+      // Make an API call to check if the phone number exists
+      checkPhoneNumberExists(formData.phoneNumber);
+    }
+  }, [formData.phoneNumber]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -143,6 +150,35 @@ const CustomerForm = ({ cartitems }) => {
         console.error(error);
         setErrorMessage('Something went wrong. Please try again later.');
         setErrorDialogOpen(true);
+      });
+  };
+
+  const checkPhoneNumberExists = (phoneNumber) => {
+    console.log('enterd into phonenumber check')
+    // Make an API call to check if the phone number exists
+    fetch(`/api/check-phone-number-exists/?phone_number=${phoneNumber}`)
+      .then(response => response.json())
+      .then(data => {
+        console.log("customer data", data)
+        if (data.exists) {
+          // Phone number exists, update the form with customer data
+          const customerData = data.customer;
+          const customerAddressData = data.customerAddress;
+
+          setFormData({
+            ...formData,
+            first_name: customerData.first_name,
+            last_name: customerData.last_name,
+            addressLine1: customerAddressData.address_line1,
+            addressLine2: customerAddressData.address_line2,
+            streetAddress: customerAddressData.street_name,
+            city: customerAddressData.city,
+            zipcode: customerAddressData.pincode,
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error checking phone number:', error);
       });
   };
 

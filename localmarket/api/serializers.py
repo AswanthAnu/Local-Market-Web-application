@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Product, ProductVariant, ProductPricing, CartItem, Customer, Order, OrderDetails
+from .models import CustomUser, Product, ProductVariant, ProductPricing, CartItem, Customer, Order, OrderDetails, CustomerAddress
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -103,7 +103,15 @@ class OrderSummaryCartItemSerializer(serializers.ModelSerializer):
 
 
 
+class CustomerAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerAddress
+        fields = '__all__'
+
 class CustomerSerializer(serializers.ModelSerializer):
+    # Include the customer address data using the CustomerAddressSerializer
+    customer_address = CustomerAddressSerializer(source='customeraddress', read_only=True)
+
     class Meta:
         model = Customer
         fields = '__all__'
@@ -112,3 +120,52 @@ class OrderDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderDetails
         fields = '__all__'
+
+from .models import Delivery  # Import the Delivery model
+
+class OrdersSerializer(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField()
+    order_details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = ['id', 'total_amount', 'total_discount', 'discount_amount', 'customer', 'order_details']
+
+    def get_customer(self, obj):
+        customer = obj.customer
+        customer_address = CustomerAddress.objects.get(customer=customer)  
+        return {
+            'first_name': customer.first_name,
+            'last_name': customer.last_name,
+            'phone_number': customer.phone_number,
+            'address_line1': customer_address.address_line1,
+            'address_line2': customer_address.address_line2,
+            'street_address': customer_address.street_name,
+            'city': customer_address.city,
+            'pincode': customer_address.pincode,
+        }
+
+    def get_order_details(self, obj):
+        order_details = OrderDetails.objects.filter(order=obj)
+        serialized_data = []
+        for order_detail in order_details:
+            # Fetch the related Delivery model
+            try:
+                delivery = Delivery.objects.get(order=obj)
+                delivery_status = delivery.delivery_status
+            except Delivery.DoesNotExist:
+                delivery_status = None  # Handle the case where delivery status is not available
+
+            serialized_data.append({
+                'product_name': order_detail.product.product_name,  
+                'variant_weight': order_detail.variant.weight,
+                'variant_weight_unit': order_detail.variant.weight_unit,
+                'quantity': order_detail.quantity,
+                'original_price': order_detail.total_price,
+                'discount': order_detail.discount,
+                'discount_price': order_detail.discount_price,
+                'delivery_status': delivery_status,
+            })
+        return serialized_data
+
+

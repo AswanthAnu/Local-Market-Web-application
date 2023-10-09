@@ -16,10 +16,10 @@ const OrderAccordianSummary = ( {order}) => {
       width="100%"
     >
       <Typography sx={{ fontWeight: 'bold' }} variant='h5'>
-        {order.customer_name}
+        {`${order.customer.first_name} ${order.customer.last_name}`}
       </Typography>
       <Typography variant='body2'>
-        Delivery location: {order.customer_address.street_address}
+        Delivery location: {order.customer.street_address}
       </Typography>
     </Stack>
   )

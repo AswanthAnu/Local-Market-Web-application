@@ -4,7 +4,8 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-} from "react-router-dom"
+  Navigate
+} from "react-router-dom";
 import Navbar from "../NavbarComponents/Navbar";
 import HomePageContent from "./HomePageContent";
 import Footer from "../FooterComponents/Footer";
@@ -14,23 +15,69 @@ import Cart from "../CartComponents/Cart";
 import CheckoutPage from "../CheckoutpageComponents/CheckoutPage";
 import LoginCard from "../AuthenticationComponents/LoginCard";
 import RegisterCard from "../AuthenticationComponents/RegisterCard";
-
+import NotFound from "../NotFound/NotFound";
 
 const HomePage = () => {
+  const isAuthenticated = !!localStorage.getItem('token'); // Check if token is present
+
   return (
     <Router>
       <Navbar />
-      <Box 
-        sx={{ minHeight: 'calc(100vh - 200px)' }}
-      >
+      <Box sx={{ minHeight: 'calc(100vh - 200px)' }}>
         <Routes>
-          <Route path="" element={<HomePageContent />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="delivery" element={<Delivery />} />
-          <Route path="cart" element={<Cart />} />
-          <Route path="checkout" element={<CheckoutPage />} />
+          <Route
+            path="/"
+            element={
+              isAuthenticated ? (
+                <HomePageContent />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="orders"
+            element={
+              isAuthenticated ? (
+                <OrdersPage />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="delivery"
+            element={
+              isAuthenticated ? (
+                <Delivery />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="cart"
+            element={
+              isAuthenticated ? (
+                <Cart />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="checkout"
+            element={
+              isAuthenticated ? (
+                <CheckoutPage />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
           <Route path="login" element={<LoginCard />} />
           <Route path="register" element={<RegisterCard />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Box>
       <Footer />
@@ -38,4 +85,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage
+export default HomePage;

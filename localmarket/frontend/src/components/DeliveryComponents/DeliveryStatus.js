@@ -5,17 +5,68 @@ import {
     MenuItem,  
 } from '@mui/material';
 
-const DeliveryStatus = ({order}) => {
-  const [status, setStatus] = useState(order.delivery_status);
+const DeliveryStatus = ({order, setOrders}) => {
+  const [status, setStatus] = useState(order.order_details[0].delivery_status);
 
-  const handleChange = (event) => {
-    console.log('delivery status before', order.delivery_status, status)
+  const fetchUpdatedOrders = async () => {
+    const apiUrl = '/api/orders/';
+    const token = localStorage.getItem('token');
+  
+    try {
+      const response = await fetch(apiUrl, {
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+  
+      if (response.status === 200) {
+        const data = await response.json();
+        return data;
+      } else {
+        console.error('Failed to fetch updated orders');
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      return [];
+    }
+  };
+  
+
+  const updateDeliveryStatus = async (orderId, newStatus) => {
+    try {
+      const apiUrl = `/api/update-delivery-status/${orderId}/`;
+      const token = localStorage.getItem('token');
+  
+      const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify({ delivery_status: newStatus }),
+      });
+  
+      if (response.status === 200) {
+        console.log('Delivery status updated successfully');
+        // After successfully updating the status, fetch the updated orders
+        const updatedOrders = await fetchUpdatedOrders();
+        setOrders(updatedOrders);
+      } else {
+        console.error('Failed to update delivery status');
+      }
+    } catch (error) {
+      console.error('Error updating delivery status:', error);
+    }
+  };
+  
+
+  const handleChange = async (event) => {
     const newStatus = event.target.value;
     setStatus(newStatus);
-    order.delivery_status = status
-    console.log('delivery status after', order.delivery_status, status)
-    
+    await updateDeliveryStatus(order.id, newStatus);
   };
+  
 
   return (
     <Box>

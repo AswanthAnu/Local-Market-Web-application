@@ -33,7 +33,7 @@ const UserDetails = ({order}) => {
             <Stack direction="row">
               <Typography className={classes.keyTypography}>Name:</Typography>
               <Typography className={classes.valueTypography}>
-                {order.customer_name}
+                {`${order.customer.first_name} ${order.customer.last_name}`}
               </Typography>
             </Stack>
           }
@@ -47,7 +47,7 @@ const UserDetails = ({order}) => {
                 Address line 1:
               </Typography>
               <Typography className={classes.valueTypography}>
-                {order.customer_address.add_line_1}
+                {order.customer.address_line1}
               </Typography>
             </Stack>
           }
@@ -61,7 +61,7 @@ const UserDetails = ({order}) => {
                 Address line 2:
               </Typography>
               <Typography className={classes.valueTypography}>
-                {order.customer_address.add_line_2}
+                {order.customer.address_line2}
               </Typography>
             </Stack>
           }
@@ -75,7 +75,7 @@ const UserDetails = ({order}) => {
                 Phone number:
               </Typography>
               <Typography className={classes.valueTypography}>
-                {order.customer_phone}
+                {order.customer.phone_number}
               </Typography>
             </Stack>
           }
@@ -87,7 +87,7 @@ const UserDetails = ({order}) => {
             <Stack direction="row">
               <Typography className={classes.keyTypography}>Street:</Typography>
               <Typography className={classes.valueTypography}>
-                {order.customer_address.street_address}
+                {order.customer.street_address}
               </Typography>
             </Stack>
           }
@@ -99,7 +99,7 @@ const UserDetails = ({order}) => {
             <Stack direction="row">
               <Typography className={classes.keyTypography}>City:</Typography>
               <Typography className={classes.valueTypography}>
-                {order.customer_address.city}
+                {order.customer.city}
               </Typography>
             </Stack>
           }
@@ -111,7 +111,7 @@ const UserDetails = ({order}) => {
             <Stack direction="row">
               <Typography className={classes.keyTypography}>Zipcode:</Typography>
               <Typography className={classes.valueTypography}>
-                {order.customer_address.zip_code}
+                {order.customer.pincode}
               </Typography>
             </Stack>
           }

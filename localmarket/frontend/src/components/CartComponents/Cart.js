@@ -3,19 +3,22 @@ import {
   Container,
   Grid,
   Typography,
+  Box,
+  Button,
   useMediaQuery,
+  use
 } from '@mui/material'
+import { useNavigate } from 'react-router-dom';
 import CartItemsCard from './CartItemsCard'
 import OrderSummaryCard from './OrderSummaryCard'
-
-
-
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 
 const Cart = () => {
 
   const isXsScreen = useMediaQuery('(max-width:1100px')
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const apiUrl = '/api/cart/'
@@ -49,12 +52,42 @@ const Cart = () => {
     setCartItems(updatedCartItems);
   };
 
+  const handleBackHome = () => {
+    navigate('/');
+  }
+
   return (
     !loading && (
       <Container maxWidth="lg" style={{ marginTop: '30px', marginBottom: '30px'}}>
         <Typography variant="h4"  style={{ marginBottom: '20px', fontWeight: 'bold', textAlign:'center'}}>
             Cart
         </Typography>
+        {cartItems.length === 0 ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '60vh',
+            }}
+          >
+            <ShoppingCartIcon
+              sx={{ fontSize: '64px', color: 'gray' }}
+            />
+            <Typography variant="h6" color="textSecondary">
+              Your cart is empty. Go back to the home and grab something.
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              style={{ marginTop: '20px' }}
+              onClick={handleBackHome}
+            >
+              Back to Home
+            </Button>
+          </Box>
+        ) : (
         <Grid
             container
             spacing={1}
@@ -73,6 +106,7 @@ const Cart = () => {
           <OrderSummaryCard cartitems={cartItems}/>
 
         </Grid>
+        )}
       </Container>
     )
   ) 

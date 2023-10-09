@@ -1,14 +1,15 @@
 import React from 'react'
-import { Box,
-         Paper,
-         useMediaQuery,
-        } from '@mui/material';
+import {
+    Box,
+    Paper,
+    useMediaQuery
+} from '@mui/material';
 import UserDetails from '../OrderComponents/UserDetails';
 import OrderDetailis from '../OrderComponents/OrderDetailis';
 import DeliveryStatus from './DeliveryStatus';
         
 
-const DeliveryAccordionDetails = ({order}) => {
+const DeliveryAccordionDetails = ({order, setOrders}) => {
 
     const isXsScreen = useMediaQuery('(max-width:800px')
 
@@ -40,7 +41,7 @@ const DeliveryAccordionDetails = ({order}) => {
             }}
         >
             <OrderDetailis order={order} />
-            <DeliveryStatus order={order}/>
+            <DeliveryStatus order={order} setOrders={setOrders}/>
         </Paper>
             
     </Box>

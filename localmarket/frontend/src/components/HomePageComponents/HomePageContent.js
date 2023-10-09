@@ -11,13 +11,13 @@ import {Container,
         MenuItem, 
         Select,
         Stack,
-        IconButton,
         Snackbar,
         Alert,
 } from '@mui/material';
-import RemoveShoppingCartIcon from '@mui/icons-material/RemoveShoppingCart';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import SearchField from '../SearchFieldComponents/SearchField';
 import CategoryChip from './CategoryChip';
+
 
 
 
@@ -115,8 +115,6 @@ const HomePageContent = () => {
   };
 
 
-
-
   return (
     !loading && (
       <Container maxWidth="lg" style={{ marginTop: '30px', marginBottom: '30px'}}>
@@ -129,12 +127,23 @@ const HomePageContent = () => {
         </Stack>
         <div>
           {products.length === 0 ? ( 
-            <div style={{ textAlign: 'center', marginTop: '20px' }}>
-              <IconButton>
-                <RemoveShoppingCartIcon /> 
-              </IconButton>
-              <Typography variant="h6">Sorry, there is no such item. Try another one.</Typography>
-            </div>
+            <Box
+              sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '60vh',
+              }}
+            >
+              <ShoppingCartIcon
+                sx={{ fontSize: '64px', color: 'gray' }}
+              />
+              <Typography variant="h6" color="textSecondary">
+                Sorry, there is no items matching this...!
+              </Typography>
+              
+            </Box>
           ) : (
             <Grid container spacing={2}>
               {products.map((product, index) => (

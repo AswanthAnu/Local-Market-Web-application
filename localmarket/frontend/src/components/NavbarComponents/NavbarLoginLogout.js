@@ -29,6 +29,7 @@ const NavbarLoginLogout = ({}) => {
         setIsAuthenticated(false);
         setSnackbarMessage('Logged out successfully');
         setSnackbarOpen(true);
+        window.location.href = '/login';
       } else {
         console.error('Logout error:', response.statusText);
       }

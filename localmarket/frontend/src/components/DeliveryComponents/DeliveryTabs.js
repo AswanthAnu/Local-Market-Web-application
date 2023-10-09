@@ -10,16 +10,17 @@ import {
 import React, { useState } from 'react'
 import DeliveryAccordian from './DeliveryAccordian'
 
-const DeliveryTabs = ({orders}) => {
+const DeliveryTabs = ({orders, setOrders}) => {
     
     const [value, setValue] = useState('1')
     const handeChange = (event, newValue) => {
         setValue(newValue)
     }
-
-    const pendingOrders = orders.filter((order) => order.delivery_status === 'pending')
-    const deliveredOrders = orders.filter((order) => order.delivery_status === 'delivered')
+    console.log('orders', orders)
+    const pendingOrders = orders.filter((order) => order.order_details[0].delivery_status === 'pending')
+    const deliveredOrders = orders.filter((order) => order.order_details[0].delivery_status === 'delivered')
     console.log('pendingOrders:', pendingOrders)
+    console.log("deliveredOrders", deliveredOrders)
 
 
   return (
@@ -40,10 +41,10 @@ const DeliveryTabs = ({orders}) => {
                 </TabList>
             </Box>
             <TabPanel value='1'>
-                <DeliveryAccordian orders={pendingOrders}/>
+                <DeliveryAccordian orders={pendingOrders} setOrders={setOrders}/>
             </TabPanel>
             <TabPanel value='2'>
-                <DeliveryAccordian orders={deliveredOrders}/>
+                <DeliveryAccordian orders={deliveredOrders} setOrders={setOrders}/>
             </TabPanel>
         </TabContext>
     </Box>

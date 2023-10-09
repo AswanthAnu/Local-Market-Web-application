@@ -16,7 +16,7 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-const ProductDetailsButton = ({order}) => {
+const ProductDetailsButton = ({orderItems}) => {
     const classes = useStyles();
     const [open, setOpen ] = useState(false)
   return (
@@ -31,7 +31,7 @@ const ProductDetailsButton = ({order}) => {
         <ProductDetailTableDialog 
             open={open}
             setOpen={setOpen}
-            order={order}
+            orderItems={orderItems}
         />
     </Grid>
     

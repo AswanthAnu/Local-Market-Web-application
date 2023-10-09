@@ -33,24 +33,9 @@ const useStyles = makeStyles((theme) => ({
 const OrderDetailis = ({order}) => {
 
     const classes = useStyles();
-    const numberOfProducts = order.order_products.length;
-    let originalPrice = 0;
-    let finalPrice = 0;
-    let discount_sum = 0;
-  
-    for (const product of order.order_products) {
-        const keys = Object.keys(product.product_details.Product_variant);
-        for (const key of keys ) {
-            const og_value = product.product_details.Product_variant[key].og_price;
-            originalPrice = originalPrice + og_value
-            const ds_value = product.product_details.Product_variant[key].ds_price;
-            finalPrice = finalPrice + ds_value
-            const ds = product.product_details.Product_variant[key].discount;
-            discount_sum = discount_sum + ds
-        }
-    }
 
-    const discount = Math.round(discount_sum/numberOfProducts)
+    const numberOfOrderItems = order.order_details.length
+    console.log(order.order_details, '[0]')
 
   return (
     <Stack>
@@ -63,32 +48,32 @@ const OrderDetailis = ({order}) => {
                     primary="Number of Products"
                     className={classes.keyListItemText}
                 />
-                <Typography variant="body2">{numberOfProducts}</Typography>
+                <Typography variant="body2">{numberOfOrderItems}</Typography>
             </ListItem>
             <ListItem>
                 <ListItemText
                     primary="Orginal Price"
                     className={classes.keyListItemText}
                 />
-                <Typography variant="body2"  style={{ color: "red" }}>{`₹${originalPrice}`}</Typography>
+                <Typography variant="body2"  style={{ color: "red" }}>{`₹${order.total_amount}`}</Typography>
             </ListItem>
             <ListItem>
                 <ListItemText
                     primary="Discount"
                     className={classes.keyListItemText}
                 />
-                <Typography variant="body2"  style={{ color: "green" }}>{`${discount}%`}</Typography>
+                <Typography variant="body2"  style={{ color: "green" }}>{`${order.total_discount}%`}</Typography>
             </ListItem>
             <ListItem>
                 <ListItemText
                     primary="Final Price"
                     className={classes.keyListItemText}
                 />
-                <Typography variant="body2" style={{ fontWeight: "bold" }}>{`₹${finalPrice}`}</Typography>
+                <Typography variant="body2" style={{ fontWeight: "bold" }}>{`₹${order.discount_amount}`}</Typography>
             </ListItem>
         </List>
         <Grid container spacing={3} className={classes.gridContainer}>
-            <ProductDetailsButton order={order}/>
+            <ProductDetailsButton orderItems={order.order_details}/>
             <LocationButton />
         </Grid>
     </Stack>

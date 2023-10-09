@@ -31,6 +31,13 @@ class CustomerAddressInline(admin.TabularInline):
 class CustomerAdmin(admin.ModelAdmin):
     inlines = [CustomerAddressInline]
 
+class OrderDetailsInline(admin.TabularInline):
+    model = OrderDetails
+    extra = 0
+
+class OrderAdmin(admin.ModelAdmin):
+    inlines = [OrderDetailsInline]
+
     
 
 admin.site.register(CustomUser)
@@ -39,7 +46,7 @@ admin.site.register(CustomerAddress)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(ProductVariant, ProductVariantAdmin)
 admin.site.register(ProductPricing)
-admin.site.register(Order)
+admin.site.register(Order, OrderAdmin)
 admin.site.register(OrderDetails)
 admin.site.register(Delivery)
 admin.site.register(Cart, CartAdmin)

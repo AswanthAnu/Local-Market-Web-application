@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 
 
 class CustomUser(AbstractUser):
@@ -45,7 +46,7 @@ class CustomerAddress(models.Model):
         verbose_name_plural = "CustomerAddress"
 
     def __str__(self) -> str:
-        return self.address_line1
+        return self.customer.first_name + " -> " + self.address_line1 
 
 
 class Category(models.Model):
@@ -104,7 +105,7 @@ class Order(models.Model):
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self) -> str:
-        return self.customer.first_name
+        return self.customer.first_name + ":  " + str(self.order_date)
 
 class OrderDetails(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
@@ -119,13 +120,24 @@ class OrderDetails(models.Model):
         verbose_name_plural = "OrderDetails"
 
     def __str__(self) -> str:
-        return self.total_price
-
+        return str(self.order.customer.first_name) + " -> " + str(self.total_price)
+    
 
 class Delivery(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     delivery_status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('delivered', 'Delivered')])
-    delivery_date = models.DateTimeField()
+    delivery_date = models.DateTimeField(null=True, blank=True)  # Allow null values for delivery_date
+
+    def save(self, *args, **kwargs):
+        if self.delivery_status == 'delivered' and not self.delivery_date:
+            # If the status is "Delivered" and delivery_date is not set, populate it with the current timestamp
+            self.delivery_date = timezone.now()
+        elif self.delivery_status != 'delivered':
+            # If the status is not "Delivered," set delivery_date to None
+            self.delivery_date = None
+
+        super(Delivery, self).save(*args, **kwargs)
+
 
     class Meta:
         verbose_name_plural = "Deliveries"
