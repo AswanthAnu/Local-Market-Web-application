@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from .views import index
 from django.views.generic import RedirectView
 
@@ -10,5 +10,5 @@ urlpatterns = [
     path('delivery', index ),
     path('cart', index ),
     path('checkout', index ),
-    path('<path:route>', index),
+    re_path(r'^.*/$', index),
 ]
