@@ -11,8 +11,10 @@ import {
   DialogContent,
   DialogTitle,
   DialogActions, 
+  CircularProgress,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { geolocated } from 'react-geolocated';
 
 const CustomerForm = ({ cartitems }) => {
   const [formData, setFormData] = useState({
@@ -24,11 +26,16 @@ const CustomerForm = ({ cartitems }) => {
     zipcode: '',
     phoneNumber: '',
     locationEnabled: false,
+    latitude: null,
+    longitude: null,
   });
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  // const { isGeolocationEnabled, coords } = props;
+  const [loading, setLoading] = useState(false); 
 
   useEffect(() => {
     if (formData.phoneNumber.length === 10) {
@@ -103,6 +110,8 @@ const CustomerForm = ({ cartitems }) => {
       pincode: formData.zipcode,
       phone_number: formData.phoneNumber,
       locationEnabled: true,
+      latitude: formData.latitude,
+      longitude: formData.longitude
       
     };
 
@@ -140,7 +149,11 @@ const CustomerForm = ({ cartitems }) => {
         } else {
           // Handle errors
           response.json().then(data => {
-            setErrorMessage('Something went wrong. Please try again later.'); // Get the error message from the response
+            if (data.message) {
+              setErrorMessage(data.message); // Set the error message from the response
+            } else {
+              setErrorMessage('Something went wrong. Please try again later.');
+            }
           });
           setErrorDialogOpen(true); // Open the error dialog
         }
@@ -182,129 +195,179 @@ const CustomerForm = ({ cartitems }) => {
       });
   };
 
+  const openLocationDialog = () => {
+    setLocationDialogOpen(true);
+  };
+  
+  // Function to close the location dialog
+  const closeLocationDialog = () => {
+    setLocationDialogOpen(false);
+  };
+
   const handleLocationEnable = () => {
-    setFormData({
-      ...formData,
-      locationEnabled: !formData.locationEnabled,
-    });
+    console.log('entered handleLocationEnable')
+    if (!formData.locationEnabled) {
+      
+      // Open the location dialog when the checkbox is checked
+      openLocationDialog();
+    } else {
+      // If the checkbox is unchecked, location is disabled
+      setFormData({
+        ...formData,
+        locationEnabled: false,
+        latitude: null,
+        longitude: null
+      });
+    }
+  };
+
+  const captureLocation = () => {
+    setLoading(true)
+    console.log('entered into captureLocation')
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log(latitude, longitude, 'lat-long')
+        setFormData({
+          ...formData,
+          locationEnabled: true,
+          latitude,
+          longitude,
+        });
+        closeLocationDialog(); // Close the dialog after capturing location
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Error capturing location:', error);
+        closeLocationDialog(); // Close the dialog in case of an error
+        setLoading(false)
+      },
+      { enableHighAccuracy: true, timeout: 100000, maximumAge: 2000 }
+    );
+    } else {
+      console.error('Geolocation is not available in this browser.');
+      setLoading(false); // Set loading back to false if geolocation is not available
+    }
   };
 
   return (
     <form>
-      <Stack direction="row">
-        <FormControl fullWidth margin="normal">
-          <TextField
-            id="first_name"
-            name="first_name"
-            label="First Name"
-            value={formData.first_name}
-            onChange={handleChange}
+  
+          <Stack direction="row">
+            <FormControl fullWidth margin="normal">
+              <TextField
+                id="first_name"
+                name="first_name"
+                label="First Name"
+                value={formData.first_name}
+                onChange={handleChange}
+                fullWidth
+                required
+              />
+            </FormControl>
+            <FormControl fullWidth margin="normal" style={{ marginLeft: '10px' }}>
+              <TextField
+                id="last_name"
+                name="last_name"
+                label="Last Name"
+                value={formData.last_name}
+                onChange={handleChange}
+                fullWidth
+                required
+              />
+            </FormControl>
+          </Stack>
+          <FormControl fullWidth margin="normal">
+            <TextField
+              id="addressLine1"
+              name="addressLine1"
+              label="Address Line 1"
+              value={formData.addressLine1}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+          </FormControl>
+          <FormControl fullWidth margin="normal">
+            <TextField
+              id="addressLine2"
+              name="addressLine2"
+              label="Address Line 2"
+              value={formData.addressLine2}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+          </FormControl>
+          <Stack direction="row">
+            <FormControl fullWidth margin="normal">
+              <TextField
+                id="streetAddress"
+                name="streetAddress"
+                label="Street Address"
+                value={formData.streetAddress}
+                onChange={handleChange}
+                fullWidth
+                required
+              />
+            </FormControl>
+            <FormControl fullWidth margin="normal" style={{ marginLeft: '10px' }}>
+              <TextField
+                id="city"
+                name="city"
+                label="City"
+                value={formData.city}
+                onChange={handleChange}
+                fullWidth
+                required
+              />
+            </FormControl>
+          </Stack>
+          <Stack direction="row">
+            <FormControl fullWidth margin="normal">
+              <TextField
+                id="zipcode"
+                name="zipcode"
+                label="Zipcode"
+                value={formData.zipcode}
+                onChange={handleChange}
+                fullWidth
+                required
+              />
+            </FormControl>
+            <FormControl fullWidth margin="normal" style={{ marginLeft: '10px' }}>
+              <TextField
+                id="phoneNumber"
+                name="phoneNumber"
+                label="Phone Number"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                fullWidth
+                required
+              />
+            </FormControl>
+          </Stack>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={formData.locationEnabled}
+                onChange={handleLocationEnable}
+                name="locationEnabled"
+                color="primary"
+              />
+            }
+            label="Enable Location"
+          />
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleOrder}
             fullWidth
-            required
-          />
-        </FormControl>
-        <FormControl fullWidth margin="normal" style={{ marginLeft: '10px' }}>
-          <TextField
-            id="last_name"
-            name="last_name"
-            label="Last Name"
-            value={formData.last_name}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-        </FormControl>
-      </Stack>
-      <FormControl fullWidth margin="normal">
-        <TextField
-          id="addressLine1"
-          name="addressLine1"
-          label="Address Line 1"
-          value={formData.addressLine1}
-          onChange={handleChange}
-          fullWidth
-          required
-        />
-      </FormControl>
-      <FormControl fullWidth margin="normal">
-        <TextField
-          id="addressLine2"
-          name="addressLine2"
-          label="Address Line 2"
-          value={formData.addressLine2}
-          onChange={handleChange}
-          fullWidth
-          required
-        />
-      </FormControl>
-      <Stack direction="row">
-        <FormControl fullWidth margin="normal">
-          <TextField
-            id="streetAddress"
-            name="streetAddress"
-            label="Street Address"
-            value={formData.streetAddress}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-        </FormControl>
-        <FormControl fullWidth margin="normal" style={{ marginLeft: '10px' }}>
-          <TextField
-            id="city"
-            name="city"
-            label="City"
-            value={formData.city}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-        </FormControl>
-      </Stack>
-      <Stack direction="row">
-        <FormControl fullWidth margin="normal">
-          <TextField
-            id="zipcode"
-            name="zipcode"
-            label="Zipcode"
-            value={formData.zipcode}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-        </FormControl>
-        <FormControl fullWidth margin="normal" style={{ marginLeft: '10px' }}>
-          <TextField
-            id="phoneNumber"
-            name="phoneNumber"
-            label="Phone Number"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-        </FormControl>
-      </Stack>
-      <FormControlLabel
-        control={
-          <Checkbox
-            checked={formData.locationEnabled}
-            onChange={handleLocationEnable}
-            name="locationEnabled"
-            color="primary"
-          />
-        }
-        label="Enable Location"
-      />
-      <Button
-        variant="contained"
-        color="success"
-        onClick={handleOrder}
-        fullWidth
-        margin="normal"
-      >
-        Order
-      </Button>
+            margin="normal"
+          >
+            Order
+          </Button>
       {/* Success Dialog */}
       <Dialog open={successDialogOpen} onClose={handleCloseSuccessDialog}>
         <DialogTitle style={{ color: 'green', textAlign: 'center' }}>
@@ -330,6 +393,27 @@ const CustomerForm = ({ cartitems }) => {
         <DialogActions>
           <Button onClick={handleCloseErrorDialog} color="primary">
             OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={locationDialogOpen} onClose={closeLocationDialog}>
+        <DialogTitle>Enable Location</DialogTitle>
+        <DialogContent>
+          <Typography>
+            This feature requires access to your location. Do you want to enable location tracking?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeLocationDialog} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              captureLocation()
+            }}
+            color="primary"
+          >
+            Enable
           </Button>
         </DialogActions>
       </Dialog>

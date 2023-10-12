@@ -74,7 +74,7 @@ const OrderDetailis = ({order}) => {
         </List>
         <Grid container spacing={3} className={classes.gridContainer}>
             <ProductDetailsButton orderItems={order.order_details}/>
-            <LocationButton />
+            <LocationButton orderCustomer={order.customer}/>
         </Grid>
     </Stack>
   )

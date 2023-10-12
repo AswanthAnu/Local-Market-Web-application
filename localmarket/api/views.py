@@ -7,8 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
-from .serializers import UserSerializer, ProductSerializer, CartItemSerializer, OrderSummaryCartItemSerializer, OrdersSerializer, CustomerSerializer, CustomerAddressSerializer
-from .models import CustomUser, Product, Category, Cart, CartItem, ProductVariant, CartItem, Customer, Order, OrderDetails, CustomerAddress, Delivery
+from .serializers import UserSerializer, ProductSerializer, CartItemSerializer, OrderSummaryCartItemSerializer, OrdersSerializer, CustomerSerializer, CustomerAddressSerializer, CustomerLocationSerializer
+from .models import CustomUser, Product, Category, Cart, CartItem, ProductVariant, CartItem, Customer, Order, OrderDetails, CustomerAddress, Delivery, CustomerLocation
 from django.http import JsonResponse
 from django.views import View
 from rest_framework.views import APIView
@@ -224,6 +224,32 @@ def create_order(request):
                     city=customer_data['city'],
                     pincode=customer_data['pincode']
                 )
+
+
+        # Check if latitude and longitude are provided in customer_data
+        if customer_data['latitude'] and customer_data['longitude']:
+            # Check if a CustomerLocation exists for the associated CustomerAddress
+            print("entered in to the coordinates")
+            try:
+                customer_location = CustomerLocation.objects.get(customer_address=customer_address)
+                # Update the latitude and longitude
+                customer_location.latitude = customer_data['latitude']
+                customer_location.longitude = customer_data['longitude']
+                customer_location.save()
+            except CustomerLocation.DoesNotExist:
+                # Handle the case where CustomerLocation doesn't exist (create one)
+                CustomerLocation.objects.create(
+                    customer_address=customer_address,
+                    latitude=customer_data['latitude'],
+                    longitude=customer_data['longitude']
+                )
+        else:
+            # Check if a CustomerLocation exists for the associated CustomerAddress
+            try:
+                customer_location = CustomerLocation.objects.get(customer_address=customer_address)
+            except CustomerLocation.DoesNotExist:
+                return Response({'message': 'Enable location permission'}, status=status.HTTP_400_BAD_REQUEST)
+
    
     # Create an order for the customer
     order = Order.objects.create(
@@ -337,3 +363,18 @@ class CheckPhoneNumberExists(APIView):
             })
         except Customer.DoesNotExist:
             return Response({'exists': False}, status=status.HTTP_404_NOT_FOUND)
+        
+class GetCustomerCoordinates(APIView):
+    def get(self, request, *args, **kwargs):
+        phone_number = request.GET.get('phone_number')
+        print('[phone_number]', phone_number)
+        try:
+            customer = Customer.objects.get(phone_number=phone_number)
+            customer_address = CustomerAddress.objects.get(customer=customer)
+            customer_location = CustomerLocation.objects.get(customer_address=customer_address)
+            serializer = CustomerLocationSerializer(customer_location)
+            return Response(serializer.data)
+        except CustomerAddress.DoesNotExist:
+            return Response({'message': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
+        except CustomerLocation.DoesNotExist:
+            return Response({'message': 'Location not found for the customer'}, status=status.HTTP_404_NOT_FOUND)

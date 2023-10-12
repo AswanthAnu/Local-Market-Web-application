@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Product, ProductVariant, ProductPricing, CartItem, Customer, Order, OrderDetails, CustomerAddress
+from .models import CustomUser, Product, ProductVariant, ProductPricing, CartItem, Customer, Order, OrderDetails, CustomerAddress, CustomerLocation
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -167,5 +167,8 @@ class OrdersSerializer(serializers.ModelSerializer):
                 'delivery_status': delivery_status,
             })
         return serialized_data
-
-
+    
+class CustomerLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerLocation
+        fields = '__all__'

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import register_user, user_login, user_logout, ProductListView, ProductCategoryView, ProductSearchView, AddToCartView, CartItemListView, UpdateCartItemQuantity, remove_cart_item, OrderSummaryCartItemListView, create_order, OrdersListView, update_delivery_status, CheckPhoneNumberExists
+from .views import register_user, user_login, user_logout, ProductListView, ProductCategoryView, ProductSearchView, AddToCartView, CartItemListView, UpdateCartItemQuantity, remove_cart_item, OrderSummaryCartItemListView, create_order, OrdersListView, update_delivery_status, CheckPhoneNumberExists, GetCustomerCoordinates
 
 urlpatterns = [
     path('register/', register_user, name='register'),
@@ -17,4 +17,5 @@ urlpatterns = [
     path('orders/', OrdersListView.as_view(), name="orders-list"),
     path('update-delivery-status/<int:order_id>/', update_delivery_status, name='update-delivery-status'),
     path('check-phone-number-exists/', CheckPhoneNumberExists.as_view(), name='check_phone_number_exists'),
+    path('get-customer-coordinates/', GetCustomerCoordinates.as_view(), name='get_customer_coordinates'),
 ]

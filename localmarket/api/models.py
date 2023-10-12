@@ -47,6 +47,14 @@ class CustomerAddress(models.Model):
 
     def __str__(self) -> str:
         return self.customer.first_name + " -> " + self.address_line1 
+    
+class CustomerLocation(models.Model):
+    customer_address = models.ForeignKey(CustomerAddress, on_delete=models.CASCADE)
+    latitude = models.DecimalField(max_digits=15, decimal_places=10, null=True)  
+    longitude = models.DecimalField(max_digits=15, decimal_places=10, null=True) 
+
+    def __str__(self):
+        return f"Location for {self.customer_address.customer.first_name}"
 
 
 class Category(models.Model):
