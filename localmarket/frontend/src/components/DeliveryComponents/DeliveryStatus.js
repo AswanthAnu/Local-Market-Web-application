@@ -9,7 +9,7 @@ const DeliveryStatus = ({order, setOrders}) => {
   const [status, setStatus] = useState(order.order_details[0].delivery_status);
 
   const fetchUpdatedOrders = async () => {
-    const apiUrl = '/api/orders/';
+    const apiUrl = '/api/delivery/';
     const token = localStorage.getItem('token');
   
     try {

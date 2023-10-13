@@ -65,14 +65,28 @@ def user_logout(request):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class CustomPagination(PageNumberPagination):
-    page_size = 12 
 
 class ProductListView(generics.ListAPIView):
-    queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    pagination_class = CustomPagination
     permission_classes = [IsAuthenticatedOrReadOnly] 
+    def get_queryset(self):
+        page = self.request.GET.get('page', 1)
+        page_size = 12  # Products per page
+        start_index = (int(page) - 1) * page_size
+        end_index = start_index + page_size
+        queryset = Product.objects.all()[start_index:end_index]
+        total_products = Product.objects.count()
+        return queryset, total_products
+    
+    def list(self, request, *args, **kwargs):
+        queryset, total_products = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'total_products': total_products,
+            'products': serializer.data,
+        })
+    
+
 
 class ProductSearchView(generics.ListAPIView):
     queryset = Product.objects.all()
@@ -114,22 +128,40 @@ class AddToCartView(View):
 
         return JsonResponse({'message': 'Item added to cart successfully'})
     
-class CustomPagination(PageNumberPagination):
-    page_size = 6  
+
+
+from rest_framework.response import Response
 
 class CartItemListView(generics.ListAPIView):
     serializer_class = CartItemSerializer
-    pagination_class = CustomPagination
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        print(self.request.user, ' --> user at cart')
         staff_user = self.request.user
         try:
             cart = Cart.objects.get(staff_user=staff_user, status='active')
-            return CartItem.objects.filter(cart=cart)
+            total_cart_items = CartItem.objects.filter(cart=cart).count()
+
+            # Handle pagination
+            page = self.request.GET.get('page', 1)
+            page_size = 12
+            start_index = (int(page) - 1) * page_size
+            end_index = start_index + page_size
+            paginated_cart_items = CartItem.objects.filter(cart=cart)[start_index:end_index]
+
+            return paginated_cart_items, total_cart_items
         except Cart.DoesNotExist:
-            return CartItem.objects.none()
+            return CartItem.objects.none(), 0
+
+    def list(self, request, *args, **kwargs):
+        queryset, total_cart_items = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'total_cart_items': total_cart_items,
+            'cart_items': serializer.data,
+        })
+
+
         
 class UpdateCartItemQuantity(APIView):
     def post(self, request, cartitem_id):
@@ -309,12 +341,56 @@ def create_order(request):
 
     return Response({'message': 'Order created successfully'}, status=status.HTTP_201_CREATED)
 
+
 class OrdersListView(generics.ListAPIView):
     serializer_class = OrdersSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Order.objects.order_by('-order_date')
+        orders = Order.objects.order_by('-order_date')
+
+        # Handle pagination
+        page = self.request.GET.get('page', 1)
+        page_size = 12
+        start_index = (int(page) - 1) * page_size
+        end_index = start_index + page_size
+        paginated_orders = orders[start_index:end_index]
+
+        return paginated_orders, Order.objects.count()
+
+    def list(self, request, *args, **kwargs):
+        queryset, total_orders = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'total_orders': total_orders,  # Total number of orders
+            'order_items': serializer.data,
+        })
+
+class DeliveryListView(generics.ListAPIView):
+    serializer_class = OrdersSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        orders = Order.objects.order_by('-order_date')
+
+        # Handle pagination
+        page = self.request.GET.get('page', 1)
+        page_size = 6
+        start_index = (int(page) - 1) * page_size
+        end_index = start_index + page_size
+        paginated_orders = orders[start_index:end_index]
+
+        return paginated_orders, Order.objects.count()
+
+    def list(self, request, *args, **kwargs):
+        queryset, total_orders = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'total_orders': total_orders,  # Total number of orders
+            'order_items': serializer.data,
+        })
+
+
     
 @api_view(['PUT'])
 def update_delivery_status(request, order_id):

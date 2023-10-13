@@ -10,5 +10,6 @@ urlpatterns = [
     path('delivery', index ),
     path('cart', index ),
     path('checkout', index ),
+    path('about', index ),
     re_path(r'^.*/$', index),
 ]

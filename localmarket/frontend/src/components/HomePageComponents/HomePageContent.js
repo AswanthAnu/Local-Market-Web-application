@@ -13,6 +13,7 @@ import {Container,
         Stack,
         Snackbar,
         Alert,
+        Pagination
 } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import SearchField from '../SearchFieldComponents/SearchField';
@@ -29,18 +30,22 @@ const HomePageContent = () => {
   const [loading, setLoading] = useState(true);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
 
   useEffect(() => {
-    const apiUrl = '/api/products/'
-
+    const apiUrl = `/api/products/?page=${currentPage}`
+    
     fetch(apiUrl).then((response) => response.json()).then((data) => {
-      setProducts(data.results)
-      const initialVariants = data.results.map((product) => product.variants[0]?.id || '');
+      console.log(data, "data")
+      setProducts(data.products)
+      setTotalPages(Math.ceil(data.total_products/12));
+      const initialVariants = data.products.map((product) => product.variants[0]?.id || '');
         setSelectedVariants(initialVariants);
         console.log('initial variant', initialVariants)
 
-      const allCategories = data.results.flatMap((product) =>
+      const allCategories = data.products.flatMap((product) =>
         product.category
         );
         console.log("categories",allCategories)
@@ -52,7 +57,7 @@ const HomePageContent = () => {
     .catch((error) => {
       console.error('Error fetching data: ', error)
     })
-  }, [])
+  }, [currentPage])
 
 
 
@@ -75,6 +80,16 @@ const HomePageContent = () => {
     const updatedVariants = [...selectedVariants];
     updatedVariants[productIndex] = variantKey;
     setSelectedVariants(updatedVariants);
+  };
+
+  const handlePageChange = (event, newPage) => {
+    console.log("newPage:", newPage);
+    console.log("totalPages:", totalPages);
+    setLoading(true)
+    if (newPage >= 1 && newPage <= totalPages) {
+      console.log('entered into if')
+      setCurrentPage(newPage);
+    }
   };
 
 
@@ -261,6 +276,17 @@ const HomePageContent = () => {
             </Grid>
           )}
         </div>
+        <Grid container justifyContent="center">
+        <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'center' }}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={handlePageChange}
+            variant="outlined"
+            color="primary"
+          />
+        </Box>
+      </Grid>
       </Container>
       
     )

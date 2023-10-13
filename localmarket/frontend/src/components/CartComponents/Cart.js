@@ -6,7 +6,7 @@ import {
   Box,
   Button,
   useMediaQuery,
-  use
+  Pagination
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom';
 import CartItemsCard from './CartItemsCard'
@@ -18,10 +18,12 @@ const Cart = () => {
   const isXsScreen = useMediaQuery('(max-width:1100px')
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const apiUrl = '/api/cart/'
+    const apiUrl = `/api/cart/?page=${currentPage}`
     const token = localStorage.getItem('token')
     console.log("entered into cart")
     fetch(apiUrl, {
@@ -29,15 +31,15 @@ const Cart = () => {
         Authorization: `Token ${token}`,
       },
     }).then((response) => response.json()).then((data) => {
-      console.log(data.results)
-      setCartItems(data.results)
-      
+      console.log(data.cart_items)
+      setCartItems(data.cart_items)
+      setTotalPages(Math.ceil(data.total_cart_items/12));
       setLoading(false);
     })
     .catch((error) => {
       console.error('Error fetching data: ', error)
     })
-  }, [])
+  }, [currentPage])
 
   const updateCartItemQuantity = (cartItemId, newQuantity) => {
     console.log('updatecart worked')
@@ -55,6 +57,16 @@ const Cart = () => {
   const handleBackHome = () => {
     navigate('/');
   }
+
+  const handlePageChange = (event, newPage) => {
+    console.log("newPage:", newPage);
+    console.log("totalPages:", totalPages);
+    setLoading(true)
+    if (newPage >= 1 && newPage <= totalPages) {
+      console.log('entered into if')
+      setCurrentPage(newPage);
+    }
+  };
 
   return (
     !loading && (
@@ -107,6 +119,21 @@ const Cart = () => {
 
         </Grid>
         )}
+        {totalPages > 1 ? (
+        <Grid container justifyContent="center">
+          <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'center' }}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              variant="outlined"
+              color="primary"
+            />
+          </Box>
+        </Grid>
+        ):(<Grid>
+
+        </Grid>)}
       </Container>
     )
   ) 

@@ -7,7 +7,9 @@ import {
   Stack,
   Typography,
   Box,
-  Button
+  Button,
+  Grid,
+  Pagination
 } from '@mui/material'
 import { ExpandMore } from '@material-ui/icons';
 import { useNavigate } from 'react-router-dom';
@@ -22,10 +24,12 @@ const OrdersPage = () => {
   const [expandedPanel, setExpandedPanel] = useState(false);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const apiUrl = '/api/orders/'
+    const apiUrl = `/api/orders/?page=${currentPage}`
     const token = localStorage.getItem('token')
     console.log("entered into order")
     fetch(apiUrl, {
@@ -34,14 +38,15 @@ const OrdersPage = () => {
       },
     }).then((response) => response.json()).then((data) => {
       console.log(data, 'orders data')
-      setOrders(data)
-      
+      setOrders(data.order_items)
+      setTotalPages(Math.ceil(data.total_orders/12));
+      console.log(Math.ceil(data.total_orders/12), 'number of pages')
       setLoading(false);
     })
     .catch((error) => {
       console.error('Error fetching data: ', error)
     })
-  }, [])
+  }, [currentPage])
 
 
   const handleAccordionChange = (panel) => (event, isExpanded) => {
@@ -52,6 +57,16 @@ const OrdersPage = () => {
   const handleBackHome = () => {
     navigate('/');
   }
+
+  const handlePageChange = (event, newPage) => {
+    console.log("newPage:", newPage);
+    console.log("totalPages:", totalPages);
+    setLoading(true)
+    if (newPage >= 1 && newPage <= totalPages) {
+      console.log('entered into if')
+      setCurrentPage(newPage);
+    }
+  };
 
   return (
     !loading && (
@@ -103,6 +118,21 @@ const OrdersPage = () => {
 
           </Stack>
         )}
+        {totalPages > 1 ? (
+        <Grid container justifyContent="center">
+          <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'center' }}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              variant="outlined"
+              color="primary"
+            />
+          </Box>
+        </Grid>
+        ):(<Grid>
+
+        </Grid>)}
       </Container>
     )
   )

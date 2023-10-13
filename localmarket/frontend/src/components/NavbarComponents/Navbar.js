@@ -30,6 +30,9 @@ const Navbar = () => {
           </Typography>
           <Hidden mdDown >
           <Stack direction='row' spacing={{ xs: 1, sm: 2, md: 4 }}>
+            <Button color="inherit" component={Link} to="/about">
+              About
+            </Button>
             <Button color="inherit" component={Link} to="/orders">
               Orders
             </Button>
@@ -57,15 +60,18 @@ const Navbar = () => {
           >
             <Box p={2} width="250px" textAlign="center" role='presentation'>
             <Stack direction='column' spacing={{ xs: 1, sm: 2, md: 4 }}>
-            <Button color="inherit" component={Link} to="/orders">
-              Orders
-            </Button>
-            <Button color="inherit" component={Link} to="/delivery">
-              Delivery
-            </Button>
-            <Button color="inherit" component={Link} to="/cart">
-              Cart
-            </Button>
+              <Button color="inherit" component={Link} to="/about">
+                About
+              </Button>
+              <Button color="inherit" component={Link} to="/orders">
+                Orders
+              </Button>
+              <Button color="inherit" component={Link} to="/delivery">
+                Delivery
+              </Button>
+              <Button color="inherit" component={Link} to="/cart">
+                Cart
+              </Button>
             <NavbarLoginLogout />
           </Stack>
             </Box>
