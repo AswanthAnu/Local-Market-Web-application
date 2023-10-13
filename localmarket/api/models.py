@@ -7,6 +7,7 @@ from django.utils import timezone
 class CustomUser(AbstractUser):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
+    reward_points = models.IntegerField(default=0)
 
     def __str__(self):
         return self.username

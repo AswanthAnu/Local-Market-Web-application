@@ -227,35 +227,49 @@ def create_order(request):
     cart_id = order_details_data['cart_id']  # Get cart_id from the data sent from the frontend
     print('current user', request.user)
     custom_user = request.user
+    created = False
 
-    # Check if the customer already exists based on phone_number
-    customer, created = Customer.objects.get_or_create(phone_number=customer_data['phone_number'], defaults={
-        'first_name': customer_data['first_name'],
-        'last_name': customer_data['last_name'],
-        'custom_user': custom_user  # Associate with the CustomUser
-    })
+    
 
     with transaction.atomic():
+        # Check if the customer already exists
+        try:
+            customer = Customer.objects.get(phone_number=customer_data['phone_number'])
+        except Customer.DoesNotExist:
+            # Customer doesn't exist, create a new one along with the address
+            customer, created = Customer.objects.get_or_create(
+                phone_number=customer_data['phone_number'],
+                defaults={
+                    'first_name': customer_data['first_name'],
+                    'last_name': customer_data['last_name'],
+                    'custom_user': custom_user  # Associate with the CustomUser
+                }
+            )
+            if created:
+                # Customer already existed, add reward points
+                custom_user.reward_points += 10
+                custom_user.save()
+            
+        # Create or update the CustomerAddress
+        customer_address, created = CustomerAddress.objects.get_or_create(
+            customer=customer,
+            defaults={
+                'address_line1': customer_data['address_line1'],
+                'address_line2': customer_data.get('address_line2', ''),
+                'street_name': customer_data['street_name'],
+                'city': customer_data['city'],
+                'pincode': customer_data['pincode'],
+            }
+        )
+
         if not created:
-            # If the customer already exists, update the CustomerAddress
-            try:
-                customer_address = CustomerAddress.objects.get(customer=customer)
-                customer_address.address_line1 = customer_data['address_line1']
-                customer_address.address_line2 = customer_data.get('address_line2', '')  # Handle optional field
-                customer_address.street_name = customer_data['street_name']
-                customer_address.city = customer_data['city']
-                customer_address.pincode = customer_data['pincode']
-                customer_address.save()
-            except CustomerAddress.DoesNotExist:
-                # Handle the case where the customer exists but doesn't have a CustomerAddress (create one)
-                customer_address = CustomerAddress.objects.create(
-                    customer=customer,
-                    address_line1=customer_data['address_line1'],
-                    address_line2=customer_data.get('address_line2', ''),  # Handle optional field
-                    street_name=customer_data['street_name'],
-                    city=customer_data['city'],
-                    pincode=customer_data['pincode']
-                )
+            # Update existing CustomerAddress
+            customer_address.address_line1 = customer_data['address_line1']
+            customer_address.address_line2 = customer_data.get('address_line2', '')
+            customer_address.street_name = customer_data['street_name']
+            customer_address.city = customer_data['city']
+            customer_address.pincode = customer_data['pincode']
+            customer_address.save()
 
 
         # Check if latitude and longitude are provided in customer_data
@@ -291,7 +305,7 @@ def create_order(request):
         discount_amount=order_details_data['discount_amount']
     )
 
-    delivery = Delivery.objects.create(order=order, delivery_status="pending")
+    Delivery.objects.create(order=order, delivery_status="pending")
 
     print('order', order)
 
