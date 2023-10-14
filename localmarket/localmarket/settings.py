@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -150,3 +151,12 @@ AUTHENTICATION_BACKENDS = [
 
 
 
+JAZZMIN_SETTINGS = {
+    "site_header": "Local Market",
+    "site_brand": "Admin Panel",
+    "welcome_sign": "Welcome to the Admin Panel",
+    "site_copyright": "M Enterprises",
+    "order_with_respect_to": ["api.CustomUser", "api.Category", "api.Product", "api.ProductVariant", "api.ProductPricing", "api.Customer", "api.CustomerAddress", "api.CustomerLocation", "api.Order", "api.OrderDetails", "api.Delivery", ],
+    "brand_colour": "info",  
+    "accent": "danger",
+}
