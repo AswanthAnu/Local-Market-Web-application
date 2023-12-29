@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom"
 import { AppBar, Toolbar, IconButton, Typography, Stack, Button, Drawer, Box} from "@mui/material";
 import MenuIcon from '@mui/icons-material/Menu'
@@ -10,6 +10,38 @@ import Hidden from "@mui/material/Hidden";
 
 const Navbar = () => {
   const [isDrawerOpenset, setIsDrawerOpen] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isStaff, setIsStaff] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsAuthenticated(!!token);
+    handleIsStaff()
+  }, []);
+
+  const handleIsStaff = async () => {
+    try {
+      const response = await fetch('/api/is_staff/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token ${localStorage.getItem('token')}`,
+        },
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        setIsStaff(data.is_staff);
+        console.log(data.is_staff, "is staff")
+      } else {
+        console.error('IsStaff error:', response.statusText);
+      }
+    } catch (error) {
+      console.error('IsStaff error:', error);
+    }
+  };
+  
+  
   return (
     <>
       <AppBar position="static"color="success">
@@ -36,9 +68,10 @@ const Navbar = () => {
             <Button color="inherit" component={Link} to="/orders">
               Orders
             </Button>
-            <Button color="inherit" component={Link} to="/delivery">
+            {isStaff ? (<Button color="inherit" component={Link} to="/delivery">
               Delivery
-            </Button>
+            </Button>) : ( null )}
+            
             <Button color="inherit" component={Link} to="/cart">
               Cart
             </Button>

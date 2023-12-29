@@ -10,6 +10,7 @@ import {
 import { makeStyles } from "@material-ui/core/styles";
 import ProductDetailsButton from './ProductDetailsButton';
 import LocationButton from './LocationButton';
+import Invoice from './Invoice';
 
 const useStyles = makeStyles((theme) => ({
     keyListItemText: {
@@ -35,7 +36,6 @@ const OrderDetailis = ({order}) => {
     const classes = useStyles();
 
     const numberOfOrderItems = order.order_details.length
-    console.log(order.order_details, '[0]')
 
   return (
     <Stack>
@@ -72,9 +72,16 @@ const OrderDetailis = ({order}) => {
                 <Typography variant="body2" style={{ fontWeight: "bold" }}>{`₹${order.discount_amount}`}</Typography>
             </ListItem>
         </List>
-        <Grid container spacing={3} className={classes.gridContainer}>
-            <ProductDetailsButton orderItems={order.order_details}/>
-            <LocationButton orderCustomer={order.customer}/>
+        <Grid container direction="row" spacing={2} className={classes.gridContainer}>
+            <Grid item>
+                <ProductDetailsButton orderItems={order.order_details} />
+            </Grid>
+            <Grid item>
+                <LocationButton orderCustomer={order.customer} />
+            </Grid>
+            <Grid item>
+                <Invoice order_id={order.id} />
+            </Grid>
         </Grid>
     </Stack>
   )

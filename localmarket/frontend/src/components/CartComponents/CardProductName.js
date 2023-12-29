@@ -5,7 +5,7 @@ import {
 } from '@mui/material'
 
 const CardProductName = ({cartitem}) => {
-
+  console.log(cartitem.product.product_name, '-------product')
   return (
     <Stack
       alignItems="center"

@@ -51,7 +51,8 @@ const DeliveryStatus = ({order, setOrders}) => {
         console.log('Delivery status updated successfully');
         // After successfully updating the status, fetch the updated orders
         const updatedOrders = await fetchUpdatedOrders();
-        setOrders(updatedOrders);
+        setOrders(updatedOrders.order_items);
+        console.log(updatedOrders.order_items, 'updated orders')
       } else {
         console.error('Failed to update delivery status');
       }

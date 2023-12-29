@@ -31,7 +31,8 @@ const CartItemRemove = ({cartitem, setCartItems}) => {
       .then((response) => response.json())
       .then((data) => {
         // Update your cart state with the new data
-        setCartItems(data.results);
+        console.log(data)
+        setCartItems(data.cart_items);
       })
       .catch((error) => {
         console.error('Error fetching updated cart data:', error);

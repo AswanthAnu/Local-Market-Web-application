@@ -83,7 +83,7 @@ class Product(models.Model):
 class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     weight = models.DecimalField(max_digits=5, decimal_places=2)
-    weight_unit = models.CharField(max_length=20, choices=[('g', 'g'), ('kg', 'kg')])
+    weight_unit = models.CharField(max_length=20, choices=[('gm', 'gm'), ('kg', 'kg'), ('ml', 'ml'), ('l', 'l'), ('piece', 'piece')])
     stock_quantity = models.PositiveIntegerField()
     created_date = models.DateTimeField(auto_now_add=True)
     edited_date = models.DateTimeField(auto_now=True)
@@ -107,6 +107,7 @@ class ProductPricing(models.Model):
         return f"{self.variant.product.product_name} {str(self.variant.weight)} {self.variant.weight_unit} {(self.original_price)}"
 
 class Order(models.Model):
+    user = models.ForeignKey( CustomUser, on_delete=models.CASCADE)
     customer = models.ForeignKey( Customer, on_delete=models.CASCADE)
     order_date = models.DateTimeField(auto_now_add=True)  
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -172,6 +173,26 @@ class CartItem(models.Model):
         return str(self.variant) + str(self.quantity) + " " + str(self.cart)
 
 
+class DealOfTheDay(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE)
+    required_quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    free_product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='free_product')
+    free_product_variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name='free_product_variant')
+    is_active = models.BooleanField(default=True)
+    create_date = models.DateTimeField(default=timezone.now)
+    image = models.ImageField(upload_to='deal_images/', null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"Deal: {self.required_quantity} {self.product.product_name} - Get {self.free_product.product_name} Free"
 
 
+
+class OfferCartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+
+    def __str__(self) -> str:
+        return str(self.variant) + str(self.quantity) + " " + str(self.cart)
 

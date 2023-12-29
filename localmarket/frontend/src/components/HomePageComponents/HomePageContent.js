@@ -13,11 +13,15 @@ import {Container,
         Stack,
         Snackbar,
         Alert,
-        Pagination
+        Pagination,
+        Dialog,
+        DialogActions,
+        DialogContent,
 } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import SearchField from '../SearchFieldComponents/SearchField';
 import CategoryChip from './CategoryChip';
+import OfferBanner from './OfferBanner';
 
 
 
@@ -32,31 +36,59 @@ const HomePageContent = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [currentCategory, setCurrentCategory] = useState(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [message, setMessage] = useState('')
+  
+
+
+  const handleClick = async () => {
+    try {
+      const response = await fetch(`/api/products/category/${currentCategory}/?page=${currentPage}`);
+    
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+    
+      const data = await response.json();
+      handleSearch(data);
+    
+    } catch (error) {
+      console.error('Error searching categories: ', error);
+    }
+  }
 
 
   useEffect(() => {
-    const apiUrl = `/api/products/?page=${currentPage}`
-    
-    fetch(apiUrl).then((response) => response.json()).then((data) => {
-      console.log(data, "data")
-      setProducts(data.products)
-      setTotalPages(Math.ceil(data.total_products/12));
-      const initialVariants = data.products.map((product) => product.variants[0]?.id || '');
-        setSelectedVariants(initialVariants);
-        console.log('initial variant', initialVariants)
 
-      const allCategories = data.products.flatMap((product) =>
-        product.category
-        );
-        console.log("categories",allCategories)
-        const uniqueCategories = [...new Set(allCategories)];
-        setUniqueCategories(uniqueCategories);
-        
-        setLoading(false);
-    })
-    .catch((error) => {
-      console.error('Error fetching data: ', error)
-    })
+    if (!currentCategory){
+      const apiUrl = `/api/products/?page=${currentPage}`
+      
+      fetch(apiUrl).then((response) => response.json()).then((data) => {
+        setLoading(true);
+        setProducts(data.products)
+        setTotalPages((prevTotalPages) => Math.ceil(data.total_products / 16));
+        const initialVariants = data.products.map((product) => product.variants[0]?.id || '');
+          setSelectedVariants(initialVariants);
+
+        const allCategories = data.products.flatMap((product) =>
+          product.category
+          );
+          const uniqueCategories = [...new Set(allCategories)];
+          setUniqueCategories(uniqueCategories);
+          
+          setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching data: ', error)
+        setMessage("Products not available!");
+        setDialogOpen(true);
+      })
+    }
+    else if (currentCategory){
+      handleClick()
+      
+    }
   }, [currentPage])
 
 
@@ -64,12 +96,11 @@ const HomePageContent = () => {
 
   const handleSearch = (searchResults) => {
     
-    console.log(searchResults, 'searchresult')
     setLoading(true)
-    const initialSearchVariants = searchResults.map((product) => product.variants[0]?.id || '');
-    console.log("intialsearchvariant", initialSearchVariants)
+    const initialSearchVariants = searchResults.products.map((product) => product.variants[0]?.id || '');
     setSelectedVariants(prev => [...initialSearchVariants]);
-    setProducts(prev => [...searchResults]);
+    setProducts(prev => [...searchResults.products]);
+    setTotalPages((prevTotalPages) => Math.ceil(searchResults.total_products / 2));
     setLoading(false);
    
     
@@ -83,21 +114,18 @@ const HomePageContent = () => {
   };
 
   const handlePageChange = (event, newPage) => {
-    console.log("newPage:", newPage);
-    console.log("totalPages:", totalPages);
     setLoading(true)
-    if (newPage >= 1 && newPage <= totalPages) {
-      console.log('entered into if')
+     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
     }
   };
 
+    const handleclosedialog = () => {
+      setDialogOpen(false)
+    }
+
 
   
-    console.log('product',products),
-    console.log("selectvariants", selectedVariants)
-    console.log('---------------------------------------------------------------------')
-  // add to cart ----------------------------------------------------- 
   const addToCart = async (variantId) => {
     console.log(variantId, 'variant id')
     try {
@@ -129,28 +157,45 @@ const HomePageContent = () => {
     }
   };
 
-
+  
   return (
     !loading && (
-      <Container maxWidth="lg" style={{ marginTop: '30px', marginBottom: '30px'}}>
-        <Stack>
-          <CategoryChip 
-            items={uniqueCategories}
-            onSearch={handleSearch}
-          />
-          <SearchField onSearch={handleSearch}/>
-        </Stack>
-        <div>
-          {products.length === 0 ? ( 
-            <Box
-              sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '60vh',
-              }}
-            >
+      <Container maxWidth="xl" style={{ marginTop: '30px', marginBottom: '30px' }}>
+        <Grid container spacing={1} style={{ marginBottom: '30px' }}>
+          {/* Offer Banner */}
+          <Grid item  md={7} sm={12} style={{ marginLeft: '44px' }}>
+            <OfferBanner />
+          </Grid>
+
+          {/* Search Field */}
+          <Grid item  md={4} sm={12} style={{ marginTop: '18px', marginLeft: '-26px'}}>
+            <Stack>
+              <SearchField onSearch={handleSearch} />
+            </Stack>
+          </Grid>
+        </Grid>
+
+        <Grid container spacing={1}>
+          {/* CategoryChip */}
+          <Grid item md={2} sm={12}>
+            <CategoryChip
+              items={uniqueCategories}
+              setCurrentCategory = {setCurrentCategory}
+              onSearch={handleSearch}
+            />
+          </Grid>
+          {/* Product Display */}
+          <Grid item lg={10} sm={12}>
+            {products.length === 0 ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: '60vh',
+                }}
+              >
               <ShoppingCartIcon
                 sx={{ fontSize: '64px', color: 'gray' }}
               />
@@ -162,12 +207,7 @@ const HomePageContent = () => {
           ) : (
             <Grid container spacing={2}>
               {products.map((product, index) => (
-                <Grid item 
-                      xs={6} 
-                      sm={4} 
-                      md={3} 
-                      lg={3} 
-                      key={index}>
+                <Grid item xs={6} sm={4} md={3} lg={3} key={index}>
                   <Card style={{ height: '100%',}}>
                       <Box sx={{ 
                                   m: 1, 
@@ -175,9 +215,8 @@ const HomePageContent = () => {
                                   borderColor: 'grey.200', 
                                   borderRadius: '16px', 
                                   position: 'relative' }}>
-                          {console.log(selectedVariants) }
                         {selectedVariants[index] &&
-                        product.variants.find((variant) => variant.id === selectedVariants[index]).pricing.discount > 0 && (           
+                        product.variants.find((variant) => variant.id === selectedVariants[index]).pricing.discount_price > 0 && (           
                           <Typography
                             variant="body2"
                             component="div"
@@ -192,7 +231,7 @@ const HomePageContent = () => {
                             }}
                           >
                             {selectedVariants[index] &&
-                            product.variants.find((variant) => variant.id === selectedVariants[index]).pricing.discount}% off
+                            product.variants.find((variant) => variant.id === selectedVariants[index]).pricing.discount_price}% off
                           </Typography>
                         )}
                         <CardMedia
@@ -275,19 +314,37 @@ const HomePageContent = () => {
               ))}
             </Grid>
           )}
-        </div>
-        <Grid container justifyContent="center">
-        <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'center' }}>
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={handlePageChange}
-            variant="outlined"
-            color="primary"
-          />
-        </Box>
+        </Grid>
       </Grid>
-      </Container>
+      {/* {totalPages > 1 && ( */}
+        <Grid container justifyContent="center">
+          <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'center' }}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              variant="outlined"
+              color="primary"
+            />
+          </Box>
+        </Grid>
+      
+      <Dialog open={dialogOpen} onClose={handleclosedialog}>
+        {/* <DialogTitle style={{ color: 'red', textAlign: 'center' }} >
+          Something went wrong...!
+        </DialogTitle> */}
+        <DialogContent>
+          <Typography >
+            {message}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleclosedialog} color="primary">
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Container>
       
     )
   )

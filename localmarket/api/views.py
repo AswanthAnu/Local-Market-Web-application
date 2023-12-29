@@ -7,14 +7,26 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
-from .serializers import UserSerializer, ProductSerializer, CartItemSerializer, OrderSummaryCartItemSerializer, OrdersSerializer, CustomerSerializer, CustomerAddressSerializer, CustomerLocationSerializer
-from .models import CustomUser, Product, Category, Cart, CartItem, ProductVariant, CartItem, Customer, Order, OrderDetails, CustomerAddress, Delivery, CustomerLocation
+from .serializers import UserSerializer, ProductSerializer, CartItemSerializer, OrderSummaryCartItemSerializer, OrdersSerializer, CustomerSerializer, CustomerAddressSerializer, CustomerLocationSerializer, DealOfTheDaySerializer, OfferCartItemSerializer
+from .models import CustomUser, Product, Category, Cart, CartItem, ProductVariant, CartItem, Customer, Order, OrderDetails, CustomerAddress, Delivery, CustomerLocation, DealOfTheDay, OfferCartItem
 from django.http import JsonResponse
 from django.views import View
 from rest_framework.views import APIView
 from django.contrib.auth import login
 from django.utils import timezone
 from django.db import transaction
+from reportlab.pdfgen import canvas
+from django.template.loader import get_template
+from django.template import Context
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from io import BytesIO
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.response import Response
 
 
 @api_view(['POST'])
@@ -65,13 +77,25 @@ def user_logout(request):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def is_staff(request):
+    if request.method == 'POST':
+        try:
+            is_staff = request.user.is_staff
+            print(request.user, 'request user')
+            print(is_staff, "is staff")
+            return Response({'is_staff': is_staff}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly] 
     def get_queryset(self):
         page = self.request.GET.get('page', 1)
-        page_size = 12  # Products per page
+        page_size = 16  # Products per page
         start_index = (int(page) - 1) * page_size
         end_index = start_index + page_size
         queryset = Product.objects.all()[start_index:end_index]
@@ -87,7 +111,6 @@ class ProductListView(generics.ListAPIView):
         })
     
 
-
 class ProductSearchView(generics.ListAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
@@ -95,15 +118,37 @@ class ProductSearchView(generics.ListAPIView):
     search_fields = ['product_name', 'category__category_name']
     permission_classes = [IsAuthenticatedOrReadOnly]
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'total_products': queryset.count(),
+            'products': serializer.data,
+        })
+
 class ProductCategoryView(generics.ListAPIView):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly] 
-
     def get_queryset(self):
+        page = self.request.GET.get('page', 1)
+        page_size = 16  # Products per page
+        start_index = (int(page) - 1) * page_size
+        end_index = start_index + page_size
         category_name = self.kwargs['category_name']
         category = get_object_or_404(Category, category_name=category_name)
-        return Product.objects.filter(category=category)
+        queryset = Product.objects.filter(category=category)[start_index:end_index]
+        total_products = len(queryset)
+        return queryset, total_products
     
+    def list(self, request, *args, **kwargs):
+        queryset, total_products = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'total_products': total_products,
+            'products': serializer.data,
+        })
+    
+
 class AddToCartView(View):
     def post(self, request, variant_id):
         print("entered into cart", request.user)
@@ -130,7 +175,7 @@ class AddToCartView(View):
     
 
 
-from rest_framework.response import Response
+
 
 class CartItemListView(generics.ListAPIView):
     serializer_class = CartItemSerializer
@@ -156,6 +201,11 @@ class CartItemListView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset, total_cart_items = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
+
+        # Retrieve OfferCartItems
+        staff_user = self.request.user
+        offer_cart_items = OfferCartItem.objects.filter(cart__staff_user=staff_user)
+
         return Response({
             'total_cart_items': total_cart_items,
             'cart_items': serializer.data,
@@ -224,33 +274,34 @@ class OrderSummaryCartItemListView(generics.ListAPIView):
 def create_order(request):
     customer_data = request.data.get('customer')
     order_details_data = request.data.get('order_details')
-    cart_id = order_details_data['cart_id']  # Get cart_id from the data sent from the frontend
-    print('current user', request.user)
+    cart_id = order_details_data['cart_id']
     custom_user = request.user
     created = False
 
-    
-
     with transaction.atomic():
-        # Check if the customer already exists
         try:
             customer = Customer.objects.get(phone_number=customer_data['phone_number'])
         except Customer.DoesNotExist:
-            # Customer doesn't exist, create a new one along with the address
-            customer, created = Customer.objects.get_or_create(
-                phone_number=customer_data['phone_number'],
-                defaults={
-                    'first_name': customer_data['first_name'],
-                    'last_name': customer_data['last_name'],
-                    'custom_user': custom_user  # Associate with the CustomUser
-                }
-            )
+            
+            phone_number = str(customer_data.get('phone_number', ''))
+            if phone_number.isnumeric() and len(phone_number) == 10:
+                
+                print(customer_data.get('phone_number'), 'phone number')
+                customer, created = Customer.objects.get_or_create(
+                    phone_number=customer_data['phone_number'],
+                    defaults={
+                        'first_name': customer_data['first_name'],
+                        'last_name': customer_data['last_name'],
+                        'custom_user': custom_user
+                    }
+                )
+            else:
+                return Response({'message': '10 digit mobile number is required'}, status=status.HTTP_400_BAD_REQUEST)
+
             if created:
-                # Customer already existed, add reward points
                 custom_user.reward_points += 10
                 custom_user.save()
-            
-        # Create or update the CustomerAddress
+
         customer_address, created = CustomerAddress.objects.get_or_create(
             customer=customer,
             defaults={
@@ -263,7 +314,6 @@ def create_order(request):
         )
 
         if not created:
-            # Update existing CustomerAddress
             customer_address.address_line1 = customer_data['address_line1']
             customer_address.address_line2 = customer_data.get('address_line2', '')
             customer_address.street_name = customer_data['street_name']
@@ -271,47 +321,37 @@ def create_order(request):
             customer_address.pincode = customer_data['pincode']
             customer_address.save()
 
-
-        # Check if latitude and longitude are provided in customer_data
         if customer_data['latitude'] and customer_data['longitude']:
-            # Check if a CustomerLocation exists for the associated CustomerAddress
-            print("entered in to the coordinates")
             try:
                 customer_location = CustomerLocation.objects.get(customer_address=customer_address)
-                # Update the latitude and longitude
                 customer_location.latitude = customer_data['latitude']
                 customer_location.longitude = customer_data['longitude']
                 customer_location.save()
             except CustomerLocation.DoesNotExist:
-                # Handle the case where CustomerLocation doesn't exist (create one)
                 CustomerLocation.objects.create(
                     customer_address=customer_address,
                     latitude=customer_data['latitude'],
                     longitude=customer_data['longitude']
                 )
         else:
-            # Check if a CustomerLocation exists for the associated CustomerAddress
             try:
                 customer_location = CustomerLocation.objects.get(customer_address=customer_address)
-            except CustomerLocation.DoesNotExist:
-                return Response({'message': 'Enable location permission'}, status=status.HTTP_400_BAD_REQUEST)
+            except:
+                pass
 
-   
-    # Create an order for the customer
     order = Order.objects.create(
         customer=customer,
+        user=custom_user,  # Set the user field to the appropriate user
         total_amount=order_details_data['total_amount'],
         total_discount=float(order_details_data['total_discount']),
         discount_amount=order_details_data['discount_amount']
     )
 
-    Delivery.objects.create(order=order, delivery_status="pending")
 
-    print('order', order)
+    Delivery.objects.create(order=order, delivery_status="pending")
 
     order_details_list = []
 
-    # Create order details and add them to the list
     for order_detail_data in order_details_data['order_details']:
         order_detail = OrderDetails(
             order=order,
@@ -324,11 +364,8 @@ def create_order(request):
         )
         order_details_list.append(order_detail)
 
-    # Bulk create order details
     OrderDetails.objects.bulk_create(order_details_list)
-    print('order details', OrderDetails)
 
-    # Update cart status to completed
     try:
         cart = Cart.objects.get(id=cart_id)
         cart.status = 'completed'
@@ -336,7 +373,6 @@ def create_order(request):
     except Cart.DoesNotExist:
         Cart.objects.none()
 
-    # Reduce the stock quantity of the product variants
     for order_detail in order_details_list:
         product_variant_id = order_detail.variant_id
         quantity = order_detail.quantity
@@ -344,24 +380,49 @@ def create_order(request):
             cart_item = CartItem.objects.get(cart=cart, variant_id=product_variant_id)
             cart_item_quantity = cart_item.quantity
             if cart_item_quantity >= quantity:
-                # Reduce the stock quantity
                 product_variant = cart_item.variant
                 product_variant.stock_quantity -= quantity
-                product_variant.save()  # Save the product variant after reducing the stock
+                product_variant.save()
             else:
                 return Response({'message': 'Not enough stock'}, status=status.HTTP_400_BAD_REQUEST)
         except CartItem.DoesNotExist:
-            CartItem.objects.none()  # Handle the case where the cart item does not exist
+            CartItem.objects.none()
+
+    # Fetch offer cart items
+    offer_cart_items = OfferCartItem.objects.filter(cart=cart)
+
+    with transaction.atomic():
+        offer_order_details_list = []
+        for offer_cart_item in offer_cart_items:
+            offer_order_detail = OrderDetails(
+                order=order,
+                product_id=offer_cart_item.variant.product.id,
+                variant_id=offer_cart_item.variant.id,
+                quantity=offer_cart_item.quantity,
+                total_price=0,  # Assuming the offer items are free
+                discount=0,
+                discount_price=0
+            )
+            offer_order_details_list.append(offer_order_detail)
+
+        OrderDetails.objects.bulk_create(offer_order_details_list)
 
     return Response({'message': 'Order created successfully'}, status=status.HTTP_201_CREATED)
-
 
 class OrdersListView(generics.ListAPIView):
     serializer_class = OrdersSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        orders = Order.objects.order_by('-order_date')
+        user = self.request.user
+        is_staff = user.is_staff
+
+        if is_staff:
+            # If the user is staff, return all orders
+            orders = Order.objects.order_by('-order_date')
+        else:
+            # If the user is not staff, return orders of the current user
+            orders = Order.objects.filter(user=user).order_by('-order_date')
 
         # Handle pagination
         page = self.request.GET.get('page', 1)
@@ -370,7 +431,7 @@ class OrdersListView(generics.ListAPIView):
         end_index = start_index + page_size
         paginated_orders = orders[start_index:end_index]
 
-        return paginated_orders, Order.objects.count()
+        return paginated_orders, len(orders)
 
     def list(self, request, *args, **kwargs):
         queryset, total_orders = self.get_queryset()
@@ -468,3 +529,104 @@ class GetCustomerCoordinates(APIView):
             return Response({'message': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
         except CustomerLocation.DoesNotExist:
             return Response({'message': 'Location not found for the customer'}, status=status.HTTP_404_NOT_FOUND)
+
+def generate_invoice(order):
+    template_path = 'invoice_template.html'  # Replace with the path to your HTML template
+    template = get_template(template_path)
+    context = {'order': order}
+    html_content = template.render(context)
+
+    # Create a PDF file
+    buffer = BytesIO()
+    pisa_status = pisa.CreatePDF(html_content, dest=buffer)
+
+    if pisa_status.err:
+        return HttpResponse('Error generating PDF', status=500)
+
+    buffer.seek(0)
+    return buffer
+
+def download_invoice(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    # Call the function to generate the invoice
+    pdf_buffer = generate_invoice(order)
+
+    # File response with correct MIME type
+    response = HttpResponse(pdf_buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'filename=invoice_of_order_id_{order.id}.pdf'
+
+    return response
+
+
+class DealOfTheDayView(generics.ListAPIView):
+    serializer_class = DealOfTheDaySerializer
+    permission_classes = [IsAuthenticatedOrReadOnly] 
+    def get_queryset(self):
+        queryset = DealOfTheDay.objects.order_by('-create_date')
+        total_deals = DealOfTheDay.objects.count()
+        return queryset, total_deals
+    
+    def list(self, request, *args, **kwargs):
+        queryset, total_deals = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        print("entered into deal of the day", total_deals, serializer.data)
+        return Response({
+            'total_deals': total_deals,
+            'offers': serializer.data,
+        })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_offer_cart_items(request):
+    user = request.user
+
+    # Get all cart items for the user
+    cart_items = CartItem.objects.filter(cart__staff_user=user)
+
+    # Create a set to store the IDs of valid deal of the day products
+    valid_deal_products = set()
+
+    # Iterate through cart items
+    for cart_item in cart_items:
+        # Check if the product is part of the deal of the day
+        deal_of_the_day = DealOfTheDay.objects.filter(
+            product=cart_item.variant.product,
+            variant=cart_item.variant,
+            required_quantity__lte=cart_item.quantity,
+            is_active=True
+        ).first()
+
+        if deal_of_the_day:
+            # Add the ID of the valid deal of the day product to the set
+            valid_deal_products.add(deal_of_the_day.free_product_variant.id)
+
+            # Check if the OfferCartItem already exists
+            offer_cart_item, created = OfferCartItem.objects.get_or_create(
+                cart=cart_item.cart,
+                variant=deal_of_the_day.free_product_variant,
+                defaults={'quantity': 0}  # Initialize quantity to 0
+            )
+
+            # Update quantity based on deal conditions
+            division_result = cart_item.quantity // deal_of_the_day.required_quantity
+            if division_result >= 1:
+                offer_cart_item.quantity = division_result
+            else:
+                # If division is less than 1, remove the OfferCartItem
+                offer_cart_item.quantity = 0
+
+            offer_cart_item.save()
+
+    # Remove OfferCartItems that don't correspond to valid deal of the day products
+    OfferCartItem.objects.filter(cart__staff_user=user).exclude(variant__id__in=valid_deal_products).delete()
+
+    # Retrieve free items
+    free_items = OfferCartItem.objects.filter(cart__staff_user=user)
+    free_items_serializer = OfferCartItemSerializer(free_items, many=True)
+    print(free_items_serializer.data, "free items ----------------------------------------------------------------")
+
+    return Response({'message': 'OfferCartItems updated successfully', 'free_items': free_items_serializer.data}, status=status.HTTP_200_OK)
+
+
+

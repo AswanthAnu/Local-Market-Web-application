@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <style>
+        @page{
+            size:"A4";
+            margin: 2.5cm 1.5cm 3.5cm 1.5cm ;
+
+
+    }
+    </style>
+        
+        <style>
+          td{
+            text-align: center;
+          }
+        </style>
+</head>
+<body>
+
+    <div class="row mt-3">
+        <div class="col-12 col-md-12 col-sm-12 text-center ">
+        <center>
+        
+          <div style="height: 20px; width:90px; ">
+            <strong>Good Life Bazzar</strong> 
+        </div>
+          
+        </center>
+        </div>
+
+      </div>
+      <div style='overflow-x:auto'>
+        <div class="row mt-3">
+        
+        </div>
+        <table class="table table-striped table-hover " >
+            <thead>
+                <tr>
+                    <th><h4></h4></th>
+                   
+                    <th><h4></h4></th>
+                    <th style="text-align: right;"><h4 style="text-align: right;">Invoiced To</h4></th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                    <td>
+                       
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td style="text-align: right;">
+                         {{ order.customer.first_name }} {{ order.customer.last_name }}
+                    </td>
+  
+                </tr>
+                <tr>
+                    <td>
+                       
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td style="text-align: right;">
+                         {{ order.customer.customeraddress_set.first.address_line1 }}, 
+                    </td>
+
+                </tr>
+                <tr>
+                    <td>
+                       
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td style="text-align: right;">
+                        {{ order.customer.customeraddress_set.first.city }}, 
+                    </td>
+
+                </tr>
+                <tr>
+                    <td>
+                        
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td style="text-align: right;">
+                        {{ order.customer.customeraddress_set.first.pincode }}
+                    </td>
+
+                </tr>
+                <tr>
+                    <td>
+                        
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td style="text-align: right;">
+                       +91-{{ order.customer.phone_number }}
+                    </td>
+
+                </tr>
+            </tbody>
+        </table>
+        <hr>
+        <table class="table table-striped table-hover " style="text-align: first;">
+            <thead>
+                <tr>
+                    <th><h4></h4></th>
+                   
+                    <th><h4></h4></th>
+                    <th><h4></h4></th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                    <td  style="text-align: first;">
+                        <strong>#Order ID:</strong>  {{ order.id }}
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td>
+                        
+                    </td>
+
+                </tr>
+                <tr>
+                    <td style="text-align: first;">
+                        <strong>Order Date:</strong> {{ order.order_date }}
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td>
+                    
+                    </td>
+
+                </tr>
+                
+
+                </tr>
+            </tbody>
+        </table>
+        <hr>
+        <table class="table table-striped table-hover " style="text-align: first;">
+            <thead>
+                <tr>
+                    <th><h4>Product </h4></th>
+                    <th><h4>Variant</h4></th>
+                   
+                    <th><h4>Orginal Price</h4></th>
+                    <th><h4>Discount</h4></th>
+                    <th><h4>Price</h4></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order_detail in order.orderdetails_set.all %}
+                <tr>
+                    <td>{{ order_detail.product.product_name }}</td>
+                    <td>{{ order_detail.variant.weight }} {{ order_detail.variant.weight_unit }}</td>
+                    <td>{{ order_detail.total_price }}</td>
+                    <td>{{ order_detail.discount }}%</td>
+                    <td>{{ order_detail.discount_price }}</td>
+                </tr>
+                
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr>
+        <table class="table table-striped table-hover " style="text-align: first;">
+            <thead>
+                <tr>
+                    <th><h4> </h4></th>
+                    <th><h4></h4></th>
+                   
+                    <th><h4></h4></th>
+                    <th><h4></h4></th>
+                </tr>
+            </thead>
+            <tbody>
+                
+
+                    <tr>
+                        <td >
+                            
+                        </td>
+                        <td>
+                            
+                        </td>
+                        <td style="text-align: right;">
+                            <strong >Total Amount:</strong>
+                        </td>
+                        <td>
+                            <strong>Rs.{{ order.total_amount }} </strong>
+                        </td>
+    
+                    </tr>
+                    <tr>
+                        <td >
+                            
+                        </td>
+                        <td>
+                            
+                        </td>
+                        <td style="text-align: right;">
+                            <strong>Total Discount:</strong>
+                        </td>
+                        <td>
+                            <strong>{{ order.total_discount }}% </strong>
+                        </td>
+
+    
+                    </tr>
+                    <tr>
+                        <td >
+                           
+                        </td>
+                        <td>
+                            
+                        </td>
+                        <td style="text-align: right;">
+                            <strong>GST:</strong>
+                        </td>
+                        <td>
+                            <strong>Rs.None</strong>
+                        </td>
+    
+                    </tr>
+                    <tr>
+                        <td >
+                            
+                        </td>
+                        <td>
+                            
+                        </td>
+                        <td style="text-align: right;">
+                            <strong>Final Amount:</strong>
+                        </td>
+                        <td>
+                            <strong>Rs.{{ order.discount_amount }}</strong>
+                        </td>
+    
+                    </tr>
+                
+            </tbody>
+        </table>
+           
+        
+        
+    </div>
+    <div class="col-md-12">
+        <div class="invoice-footer mt25">
+            <p class="text-center">Thank you for shopping with us!</p>
+        </div>
+    </div>
+
+
+    
+
+</body>
+</html>

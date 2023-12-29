@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Product, ProductVariant, ProductPricing, CartItem, Customer, Order, OrderDetails, CustomerAddress, CustomerLocation
+from .models import CustomUser, Product, ProductVariant, ProductPricing, CartItem, Customer, Order, OrderDetails, CustomerAddress, CustomerLocation, Delivery, DealOfTheDay, OfferCartItem
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -121,7 +121,6 @@ class OrderDetailsSerializer(serializers.ModelSerializer):
         model = OrderDetails
         fields = '__all__'
 
-from .models import Delivery  # Import the Delivery model
 
 class OrdersSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
@@ -172,3 +171,16 @@ class CustomerLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerLocation
         fields = '__all__'
+
+class DealOfTheDaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DealOfTheDay
+        fields = '__all__'
+
+
+class OfferCartItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(source='variant.product', read_only=True)
+
+    class Meta:
+        model = OfferCartItem
+        fields ="__all__"

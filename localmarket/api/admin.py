@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomUser, Customer, CustomerAddress, Product, ProductVariant, ProductPricing, Order, OrderDetails, Delivery, Cart, CartItem, Category, CustomerLocation
+from .models import CustomUser, Customer, CustomerAddress, Product, ProductVariant, ProductPricing, Order, OrderDetails, Delivery, Cart, CartItem, Category, CustomerLocation, DealOfTheDay, OfferCartItem
 
 # Register your models here.
 class ProductPricingInline(admin.TabularInline):
@@ -58,3 +58,5 @@ admin.site.register(Delivery)
 admin.site.register(Cart, CartAdmin)
 admin.site.register(CartItem)
 admin.site.register(Category)
+admin.site.register(DealOfTheDay)
+admin.site.register(OfferCartItem)

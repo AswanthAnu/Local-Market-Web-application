@@ -28,32 +28,44 @@ const LocationButton = ({ orderCustomer }) => {
   
 
   const openGoogleMaps = () => {
-    
-    fetch(`/api/get-customer-coordinates/?phone_number=${phoneNumber}`)
-      .then(response => response.json())
-      .then(data => {
-        if (data.latitude && data.longitude) {
-          const latitude = data.latitude;
-          const longitude = data.longitude;
-          const myLocation = "my_location"; // Replace with your actual location or latitude/longitude
 
-          const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${myLocation}&destination=${latitude},${longitude}`;
-          window.open(googleMapsUrl, '_blank');
-        } else {
-          // Handle errors
-          response.json().then(data => {
-            if (data.message) {
-              setErrorMessage(data.message); // Set the error message from the response
-            } else {
-              setErrorMessage('Something went wrong. Please try again later.');
-            }
+    try {
+      fetch(`/api/get-customer-coordinates/?phone_number=${phoneNumber}`)
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
+              return response.json();
+          })
+          .then(data => {
+              if (data.latitude && data.longitude) {
+                  const latitude = data.latitude;
+                  const longitude = data.longitude;
+                  const myLocation = "my_location"; // Replace with your actual location or latitude/longitude
+  
+                  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${myLocation}&destination=${latitude},${longitude}`;
+                  window.open(googleMapsUrl, '_blank');
+              } else {
+                  // Handle errors
+                  if (data.message) {
+                      setErrorMessage(data.message); // Set the error message from the response
+                  } else {
+                      setErrorMessage('Something went wrong. Please try again later.');
+                  }
+                  setErrorDialogOpen(true); // Open the error dialog
+              }
+          })
+          .catch(error => {
+              console.error('Error fetching coordinates:', error);
+              setErrorMessage('Location is not available!');
+              setErrorDialogOpen(true); // Open the error dialog
           });
-          setErrorDialogOpen(true); // Open the error dialog
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching coordinates:', error);
-      });
+    } catch (error) {
+        console.error('Error in try block:', error);
+        setErrorMessage('Location is not available!');
+        setErrorDialogOpen(true); // Open the error dialog
+    }
+  
   };
 
   const handleCloseErrorDialog = () => {
@@ -66,9 +78,9 @@ const LocationButton = ({ orderCustomer }) => {
         Location
       </Button>
       <Dialog open={errorDialogOpen} onClose={handleCloseErrorDialog}>
-        <DialogTitle style={{ color: 'red', textAlign: 'center' }} >
+        {/* <DialogTitle style={{ color: 'red', textAlign: 'center' }} >
           Something went wrong...!
-        </DialogTitle>
+        </DialogTitle> */}
         <DialogContent>
           <Typography >
             {errorMessage}

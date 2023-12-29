@@ -5,6 +5,7 @@ import {
 } from '@mui/material'
 
 const CardImage = ({cartitem, index}) => {
+  console.log(cartitem.product.image, 'cartitem.product---------')
   return (
     <CardMedia
         component="img"

@@ -31,14 +31,13 @@ const OrdersPage = () => {
   useEffect(() => {
     const apiUrl = `/api/orders/?page=${currentPage}`
     const token = localStorage.getItem('token')
-    console.log("entered into order")
     fetch(apiUrl, {
       headers: {
         Authorization: `Token ${token}`,
       },
     }).then((response) => response.json()).then((data) => {
-      console.log(data, 'orders data')
       setOrders(data.order_items)
+      console.log(data.order_items, 'oredre ----')
       setTotalPages(Math.ceil(data.total_orders/12));
       console.log(Math.ceil(data.total_orders/12), 'number of pages')
       setLoading(false);
@@ -59,11 +58,8 @@ const OrdersPage = () => {
   }
 
   const handlePageChange = (event, newPage) => {
-    console.log("newPage:", newPage);
-    console.log("totalPages:", totalPages);
     setLoading(true)
     if (newPage >= 1 && newPage <= totalPages) {
-      console.log('entered into if')
       setCurrentPage(newPage);
     }
   };

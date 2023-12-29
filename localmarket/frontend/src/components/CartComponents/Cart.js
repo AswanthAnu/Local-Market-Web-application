@@ -1,4 +1,4 @@
-import React, { useState, useEffect }from 'react'
+import React, { useState, useEffect, useCallback }from 'react'
 import {
   Container,
   Grid,
@@ -12,6 +12,8 @@ import { useNavigate } from 'react-router-dom';
 import CartItemsCard from './CartItemsCard'
 import OrderSummaryCard from './OrderSummaryCard'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
+import OfferBanner from '../HomePageComponents/OfferBanner';
+import OfferCartItemsCard from './OfferCartItemsCard';
 
 const Cart = () => {
 
@@ -20,12 +22,12 @@ const Cart = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [offerProduct, setOfferProduct] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     const apiUrl = `/api/cart/?page=${currentPage}`
     const token = localStorage.getItem('token')
-    console.log("entered into cart")
     fetch(apiUrl, {
       headers: {
         Authorization: `Token ${token}`,
@@ -41,8 +43,7 @@ const Cart = () => {
     })
   }, [currentPage])
 
-  const updateCartItemQuantity = (cartItemId, newQuantity) => {
-    console.log('updatecart worked')
+  const updateCartItemQuantity = useCallback((cartItemId, newQuantity) => {
     // Find the cart item in cartItems and update its quantity
     const updatedCartItems = cartItems.map((item) => {
       if (item.id === cartItemId) {
@@ -50,9 +51,9 @@ const Cart = () => {
       }
       return item;
     });
-
+  
     setCartItems(updatedCartItems);
-  };
+  }, [cartItems, setCartItems]);
 
   const handleBackHome = () => {
     navigate('/');
@@ -68,11 +69,45 @@ const Cart = () => {
     }
   };
 
+  useEffect(() => {
+    const apiUrl = '/api/offercheck/';
+    const token = localStorage.getItem('token');
+    setLoading(true);
+  
+    const fetchOfferData = async () => {
+      
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ cartItems }),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+  
+        const offerData = await response.json();
+        setOfferProduct(offerData.free_items)
+      } catch (error) {
+        console.error('Error fetching offer data: ', error);
+      }
+    };
+    
+    fetchOfferData();
+    setLoading(false);
+  }, [cartItems, updateCartItemQuantity]);
+  
+  
+
   return (
     !loading && (
       <Container maxWidth="lg" style={{ marginTop: '30px', marginBottom: '30px'}}>
-        <Typography variant="h4"  style={{ marginBottom: '20px', fontWeight: 'bold', textAlign:'center'}}>
-            Cart
+        <Typography variant="h4" style={{ marginBottom: '20px', fontWeight: 'bold', textAlign: 'center' }}>
+          My Cart
         </Typography>
         {cartItems.length === 0 ? (
           <Box
@@ -100,43 +135,57 @@ const Cart = () => {
             </Button>
           </Box>
         ) : (
-        <Grid
-            container
-            spacing={1}
-            sx={{
-            width: '100%',
-            margin: 1,
-            display: 'flex',
-            flexDirection: isXsScreen ? 'column' : 'row',
-          }}
-        >
-          <CartItemsCard 
-            cartitems={cartItems} 
-            updateCartItemQuantity={updateCartItemQuantity} 
-            setCartItems={setCartItems}
-          />
-          <OrderSummaryCard cartitems={cartItems}/>
+          <Grid container spacing={2}>
+            {/* First Row */}
+            <Grid item xs={8} justifyContent={"center"}>
+              <OfferBanner />
+            </Grid>
+            {/* Second Row */}
+            <Grid
+              container
+              spacing={1}
+              sx={{
+                width: '100%',
+                margin: 1,
+                display: 'flex',
+                flexDirection: isXsScreen ? 'column' : 'row',
+              }}
+            >
+              <CartItemsCard 
+                cartitems={cartItems} 
+                updateCartItemQuantity={updateCartItemQuantity} 
+                setCartItems={setCartItems}
+              />
+             {/* {offerProduct.length > 0 && (
+                <OfferCartItemsCard freeitems={offerProduct} />
+              )} */}
 
-        </Grid>
+
+              <OrderSummaryCard cartitems={cartItems}/>
+            </Grid>
+            {/* Pagination Section */}
+            {totalPages > 1 ? (
+              <Grid container justifyContent="center">
+                <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'center' }}>
+                  <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={handlePageChange}
+                    variant="outlined"
+                    color="primary"
+                  />
+                </Box>
+              </Grid>
+            ) : (
+              <Grid>
+                {/* Placeholder for content when totalPages <= 1 */}
+              </Grid>
+            )}
+          </Grid>
         )}
-        {totalPages > 1 ? (
-        <Grid container justifyContent="center">
-          <Box sx={{ marginTop: 2, display: 'flex', justifyContent: 'center' }}>
-            <Pagination
-              count={totalPages}
-              page={currentPage}
-              onChange={handlePageChange}
-              variant="outlined"
-              color="primary"
-            />
-          </Box>
-        </Grid>
-        ):(<Grid>
-
-        </Grid>)}
       </Container>
     )
-  ) 
-}
+    );
+  }  
 
 export default Cart
